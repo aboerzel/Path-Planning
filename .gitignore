@@ -1,0 +1,10 @@
+build
+
+#Visual Studio
+.vs
+*.user
+*.filters
+*.vcxproj
+*.sln
+Debug/
+
