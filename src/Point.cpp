@@ -6,5 +6,11 @@ Point::Point(double x, double y)
     Y = y;
 }
 
+Point::Point(vector<double> p)
+{
+    X = p[0];
+    Y = p[1];
+}
+
 Point::~Point()
 = default;

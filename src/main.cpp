@@ -7,15 +7,23 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
 #include "json.hpp"
+#include "spline.h"
 #include "Point.h"
-#include "BehaviorPlanner.h"
+#include "HighwayDrivingBehavior.h"
+#include "LaneDConverter.h"
+#include "PointConverter.h"
 
 // for convenience
 using nlohmann::json;
-using std::string;
-using std::vector;
+using namespace std;
 
-BehaviorPlanner behavior_planner;
+HighwayDrivingBehavior highway_driving_behavior;
+
+#define WAYPOINT_DISTANCE 50.0
+#define WAYPOINT_COUNT 3
+#define DT .02
+#define MAX_ACCEL 10
+#define PATH_LENGTH 50
 
 int main()
 {
@@ -109,51 +117,101 @@ int main()
 
                         int prev_path_size = previous_path_x.size();
               
-                        // Start with remaining old path
+                        // start with previous path
                         for (auto i = 0; i < prev_path_size; i++)
                         {
                             next_x_vals.push_back(previous_path_x[i]);
                             next_y_vals.push_back(previous_path_y[i]);
                         }
-
-                        // Reference velocity to target
-                        auto ref_vel = car_speed; // mph
+             
                         auto ref_x = car_x;
                         auto ref_y = car_y;
                         auto ref_yaw = deg2rad(car_yaw);
+                        auto ref_speed = car_speed; 
 
                         vector<Point> spline_points;
 
-                        // If no previous path, initiate at current values
-                        if (prev_path_size < 2)
-                        {
+                        if (prev_path_size < 2) 
+                        {                       
                             auto prev_car_x = car_x - cos(car_yaw);
                             auto prev_car_y = car_y - sin(car_yaw);
 
                             spline_points.push_back(Point(prev_car_x, prev_car_y));
                             spline_points.push_back(Point(car_x, car_y));
-
-                            ref_vel = car_speed;
                         }
-                        else // Otherwise, use previous x and y and calculate angle based on change in x & y
+                        else 
                         {
-                            ref_x = previous_path_x[prev_path_size - 1];
                             ref_y = previous_path_y[prev_path_size - 1];
 
+                            ref_x = previous_path_x[prev_path_size - 1];
                             double ref_x_prev = previous_path_x[prev_path_size - 2];
                             double ref_y_prev = previous_path_y[prev_path_size - 2];
 
                             ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
-                            ref_vel = behavior_planner.target_vehicle_speed;
+                            ref_speed = highway_driving_behavior.target_vehicle_speed;
 
-                            // Append starter points for spline later
                             spline_points.push_back(Point(ref_x_prev, ref_y_prev));
-                            spline_points.push_back(Point(car_x, car_y));
+                            spline_points.push_back(Point(ref_x, ref_y));
                         }
 
-                        // Plan the rest of the path based on calculations
                         auto frenet_vec = getFrenet(ref_x, ref_y, ref_yaw, map_waypoints_x, map_waypoints_y);
 
+                        auto current_lane = LaneDConverter::d_to_lane(frenet_vec[1]);
+                        auto target_lane = highway_driving_behavior.get_target_lane(frenet_vec[0], current_lane, sensor_fusion);
+                        auto target_d = LaneDConverter::lane_to_d(target_lane);
+                        
+                        cout << "lane: " << target_lane << endl;
+                        cout << "d: " << target_d << endl;
+
+                        // add new waypoints to following the desired lane
+                        for (auto i=1; i <= WAYPOINT_COUNT; i++)
+                        {
+                            auto wp = getXY(car_s + (i * WAYPOINT_DISTANCE), target_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
+                            //cout << "wp: " << wp[0] << " " << wp[1] << endl;
+                            spline_points.push_back(wp);
+                        }
+
+                        for (auto i = 0; i < spline_points.size(); i++)
+                        {
+                            spline_points[i] = PointConverter::map_to_vehicle_coordinates(spline_points[i], Point(ref_x, ref_y), ref_yaw);
+                            //cout << "sp: " << spline_points[i].X << " " << spline_points[i].Y << endl;                        
+                        }
+
+                        // create spline from way
+                        tk::spline s;
+                        s.set_points(get_x_values(spline_points), get_y_values(spline_points));
+
+                        auto target_x = WAYPOINT_DISTANCE;
+                        auto target_y = s(target_x);
+                        auto target_dist = sqrt(pow(target_x, 2) + pow(target_y, 2));
+
+                        double x_offset = 0;
+                        const auto accel = MAX_ACCEL * DT * 0.008;
+
+                        for (auto i = 0; i < PATH_LENGTH - prev_path_size; i++)
+                        {
+                            if (ref_speed < highway_driving_behavior.target_vehicle_speed - accel) 
+                            { 
+                                ref_speed += accel;
+                            }
+                            else if (ref_speed > highway_driving_behavior.target_vehicle_speed + accel)
+                            { 
+                                ref_speed -= accel;
+                            }
+
+                            // calculate points along new path
+                            auto N = (target_dist / (DT * ref_speed));
+                            auto x = x_offset + (target_x) / N;
+                            auto y = s(x);
+
+                            x_offset = x;
+
+                            // convert back to map coordinates
+                            auto p = PointConverter::vehicle_to_map_coordinates(Point(x, y), Point(ref_x, ref_y), ref_yaw);
+
+                            next_x_vals.push_back(p.X);
+                            next_y_vals.push_back(p.Y);
+                        }
 
                         msgJson["next_x"] = next_x_vals;
                         msgJson["next_y"] = next_y_vals;
