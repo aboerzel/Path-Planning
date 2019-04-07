@@ -126,32 +126,32 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
             scores[i] += 0.5; // benefit to keeping lane
         }
 
-        auto front_vehicle = find_closest_vehicle(s, i, sensor_fusion, true);
-        auto back_vehicle = find_closest_vehicle(s, i, sensor_fusion, false);
+        auto vehicle_ahead = find_closest_vehicle(s, i, sensor_fusion, true);
+        auto vehicle_behind = find_closest_vehicle(s, i, sensor_fusion, false);
 
-        if (front_vehicle[0] > 100 && back_vehicle[0] > 100)
+        if (vehicle_ahead[0] > 100 && vehicle_behind[0] > 100)
         {
             scores[i] += 5; // if wide open lane, move into that lane
         }
         else
         {
-            if (front_vehicle[0] < 10)
+            if (vehicle_ahead[0] < 10)
             {
                 scores[i] -= 5; // if car too close in front, negative score
             }
 
-            if (back_vehicle[0] < 10)
+            if (vehicle_behind[0] < 10)
             {
                 scores[i] -= 5; // if car too close in back, negative score
             }
 
-            scores[i] += 1 - (10 / (front_vehicle[0] / 3)); // benefit for large open distance in lane in front
+            scores[i] += 1 - (10 / (vehicle_ahead[0] / 3)); // benefit for large open distance in lane in front
 
-            scores[i] += 1 - (10 / (back_vehicle[0] / 3)); // benefit for large open distance in lane in back
+            scores[i] += 1 - (10 / (vehicle_behind[0] / 3)); // benefit for large open distance in lane in back
 
-            scores[i] += 1 - (10 / (front_vehicle[1] / 2)); // benefit for faster car speed in lane in front
+            scores[i] += 1 - (10 / (vehicle_ahead[1] / 2)); // benefit for faster car speed in lane in front
 
-            scores[i] += 1 / (back_vehicle[1] / 2); // benefit for slower car speed in lane in back
+            scores[i] += 1 / (vehicle_behind[1] / 2); // benefit for slower car speed in lane in back
         }
 
         // simple average calculation for scores over the last 10 iterations
