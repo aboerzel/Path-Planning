@@ -18,6 +18,7 @@ using namespace std;
 
 HighwayDrivingBehavior highway_driving_behavior;
 
+// parameter to adjust path planning
 #define WAYPOINT_DISTANCE 50.0
 #define WAYPOINT_COUNT 3
 #define DT .02

@@ -6,6 +6,7 @@
 
 using namespace std;
 
+// parameter to adjust driving behavior
 #define MAX_SPEED 49.5
 #define MIN_DISTANCE_TO_LEAD_VEHICLE 30.0
 #define MIN_LANE_CHANGE_DISTANCE 5.0
