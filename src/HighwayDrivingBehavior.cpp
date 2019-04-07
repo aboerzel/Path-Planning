@@ -22,16 +22,17 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     // find leading vehicle on current lane
     const auto lead_vehicle = find_closest_vehicle(s, current_lane, sensor_fusion, true);
     const auto lead_vehicle_distance = lead_vehicle[0];
-    const auto leed_vehicle_speed = lead_vehicle[1];
+    const auto lead_vehicle_speed = lead_vehicle[1];
 
-    // drive at maximum speed if the distance to the vehicle in front is big enough
-    // we don't need to change the lane
+    // we don't need to change the lane if the distance to leading car is big enough
     if (lead_vehicle_distance > MIN_DISTANCE_TO_LEAD_VEHICLE)
     {
         printf("%-22s: %4.2f\n", "lead vehicle distance", lead_vehicle_distance);
-        printf("%-22s: %4.2f\n", "lead vehicle speed", leed_vehicle_speed);
+        printf("%-22s: %4.2f\n", "lead vehicle speed", lead_vehicle_speed);
 
         avg_scores = {0, 0, 0}; // reset average score
+
+        // drive at maximum speed in this case
         return DrivingAction{current_lane, MAX_SPEED};
     }
 
@@ -48,12 +49,13 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     {
         // it's not possible to change the lane => remain on current lane
         printf("%-22s: %4.2f\n", "lead vehicle distance", lead_vehicle_distance);
-        printf("%-22s: %4.2f\n", "lead vehicle speed", leed_vehicle_speed);
+        printf("%-22s: %4.2f\n", "lead vehicle speed", lead_vehicle_speed);
 
         // adjust the speed to the speed of the leading car on the current lane
         if (lead_vehicle_distance < MIN_DISTANCE_TO_LEAD_VEHICLE)
-            return DrivingAction{current_lane, min(leed_vehicle_speed, MAX_SPEED)};
+            return DrivingAction{current_lane, min(lead_vehicle_speed, MAX_SPEED)};
 
+        // drive with max speed if the distance to leading car is big enough
         return DrivingAction{current_lane, MAX_SPEED};
     }
 
@@ -65,6 +67,7 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     if (new_vehicle_ahead[0] < MIN_DISTANCE_TO_LEAD_VEHICLE)
         return DrivingAction{new_lane, min(new_vehicle_ahead[1], MAX_SPEED)};
 
+    // drive with max speed if the distance to leading car is big enough
     return DrivingAction{new_lane, MAX_SPEED};
 }
 
