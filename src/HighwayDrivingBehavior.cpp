@@ -11,15 +11,13 @@ using namespace std;
 #define MIN_LANE_CHANGE_DISTANCE 5.0
 
 HighwayDrivingBehavior::HighwayDrivingBehavior()
-{
-    target_speed = 0.0;
-}
+= default;
 
 HighwayDrivingBehavior::~HighwayDrivingBehavior()
 = default;
 
-int HighwayDrivingBehavior::get_target_lane(const double s, const int current_lane,
-                                            const vector<vector<double>>& sensor_fusion)
+DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const int current_lane,
+                                                      const vector<vector<double>>& sensor_fusion)
 {
     // find leading vehicle on current lane
     const auto lead_vehicle = find_closest_vehicle(s, current_lane, sensor_fusion, true);
@@ -33,9 +31,8 @@ int HighwayDrivingBehavior::get_target_lane(const double s, const int current_la
         printf("%-22s: %4.2f\n", "lead vehicle distance", lead_vehicle_distance);
         printf("%-22s: %4.2f\n", "lead vehicle speed", leed_vehicle_speed);
 
-        target_speed = MAX_SPEED;
         avg_scores = {0, 0, 0}; // reset average score
-        return current_lane;
+        return DrivingAction{current_lane, MAX_SPEED};
     }
 
     // check if it's better to change the lane
@@ -46,37 +43,29 @@ int HighwayDrivingBehavior::get_target_lane(const double s, const int current_la
     auto new_vehicle_behind = find_closest_vehicle(s, new_lane, sensor_fusion, false);
 
     // check if there is enough room to change the lane
-    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE || avg_scores[new_lane] <= -5)
+    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE ||
+        avg_scores[new_lane] <= -5)
     {
         // it's not possible to change the lane => remain on current lane
-        // adjust the speed to the speed of the leading car on the current lane
-        if (lead_vehicle_distance < MIN_DISTANCE_TO_LEAD_VEHICLE)
-            target_speed = min(leed_vehicle_speed, MAX_SPEED);
-        else
-            target_speed = MAX_SPEED;
-
         printf("%-22s: %4.2f\n", "lead vehicle distance", lead_vehicle_distance);
         printf("%-22s: %4.2f\n", "lead vehicle speed", leed_vehicle_speed);
 
-        return current_lane;
-    }
-    
-    // it's possible to change the lane => change to the new lane
-    // adjust the speed to the speed of the leading car on the new lane
-    if (new_vehicle_ahead[0] < MIN_DISTANCE_TO_LEAD_VEHICLE)
-        target_speed = min(new_vehicle_ahead[1], MAX_SPEED);
-    else
-        target_speed = MAX_SPEED;
+        // adjust the speed to the speed of the leading car on the current lane
+        if (lead_vehicle_distance < MIN_DISTANCE_TO_LEAD_VEHICLE)
+            return DrivingAction{current_lane, min(leed_vehicle_speed, MAX_SPEED)};
 
+        return DrivingAction{current_lane, MAX_SPEED};
+    }
+
+    // it's possible to change the lane => change to the new lane
     printf("%-22s: %4.2f\n", "lead vehicle distance", new_vehicle_ahead[0]);
     printf("%-22s: %4.2f\n", "lead vehicle speed", new_vehicle_ahead[1]);
 
-    return new_lane;
-}
+    // adjust the speed to the speed of the leading car on the new lane
+    if (new_vehicle_ahead[0] < MIN_DISTANCE_TO_LEAD_VEHICLE)
+        return DrivingAction{new_lane, min(new_vehicle_ahead[1], MAX_SPEED)};
 
-double HighwayDrivingBehavior::get_target_speed()
-{
-    return target_speed;
+    return DrivingAction{new_lane, MAX_SPEED};
 }
 
 vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, const int lane,
@@ -183,4 +172,3 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
     // best score for lanes 1 and 2
     return max_element(avg_scores.begin() + 1, avg_scores.end()) - avg_scores.begin();
 }
-

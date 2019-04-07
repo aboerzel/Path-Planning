@@ -161,10 +161,11 @@ int main()
                         printf("%-22s: %d\n", "current lane", current_lane);
                         printf("%-22s: %4.2f\n", "current d", frenet_vec[1]);
 
-                        auto target_lane = highway_driving_behavior.get_target_lane(frenet_vec[0], current_lane, sensor_fusion);
-                        auto target_d = LaneConverter::lane_to_d(target_lane);
+                        auto driving_action = highway_driving_behavior.get_driving_action(frenet_vec[0], current_lane, sensor_fusion);
+                        auto target_d = LaneConverter::lane_to_d(driving_action.lane);
 
-                        printf("%-22s: %d\n", "target lane", target_lane);
+                        printf("%-22s: %4.2f\n", "target speed", driving_action.speed);
+                        printf("%-22s: %d\n", "target lane", driving_action.lane);
                         printf("%-22s: %4.2f\n", "target d", target_d);
                        
                         // add new waypoints to following the desired lane
@@ -193,11 +194,11 @@ int main()
                         for (auto i = 0; i < PATH_LENGTH - prev_path_size; i++)
                         {
                             // accelerate / decelerate; ensure min/max speed
-                            if (ref_speed < highway_driving_behavior.get_target_speed() - MAX_ACC)
+                            if (ref_speed < driving_action.speed - MAX_ACC)
                             {
                                 ref_speed += MAX_ACC;
                             }
-                            else if (ref_speed > highway_driving_behavior.get_target_speed() + MAX_ACC)
+                            else if (ref_speed > driving_action.speed + MAX_ACC)
                             {
                                 ref_speed -= MAX_ACC;
                             }
