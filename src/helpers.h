@@ -173,6 +173,11 @@ vector<double> getXY(double s, double d, const vector<double>& maps_s,
     return {x, y};
 }
 
+/**
+ * Get all x-values from a point vector.
+ * @param points Vector with points.
+ * @return Vector with x-values of the point vector.
+ */
 inline vector<double> get_x_values(vector<Point> points)
 {
     vector<double> result;
@@ -183,6 +188,11 @@ inline vector<double> get_x_values(vector<Point> points)
     return result;
 }
 
+/**
+ * Get all y-values from a point vector.
+ * @param points Vector with points.
+ * @return Vector with y-values of the point vector.
+ */
 inline vector<double> get_y_values(vector<Point> points)
 {
     vector<double> result;

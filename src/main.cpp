@@ -109,10 +109,7 @@ int main()
                         vector<double> next_x_vals;
                         vector<double> next_y_vals;
 
-                        /**
-                         * TODO: define a path made up of (x,y) points that the car will visit
-                         *   sequentially every .02 seconds
-                         */
+                        // ********************* START PROJECT CODE **********************
 
                         int prev_path_size = previous_path_x.size();
               
@@ -216,6 +213,8 @@ int main()
                             next_x_vals.push_back(p.X);
                             next_y_vals.push_back(p.Y);
                         }
+
+                        // ********************* END PROJECT CODE **********************
 
                         msgJson["next_x"] = next_x_vals;
                         msgJson["next_y"] = next_y_vals;
