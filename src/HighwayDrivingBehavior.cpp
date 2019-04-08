@@ -7,9 +7,9 @@
 using namespace std;
 
 // parameter to adjust driving behavior
-#define MAX_SPEED 49.5
-#define MIN_DISTANCE_TO_LEAD_VEHICLE 30.0
-#define MIN_LANE_CHANGE_DISTANCE 5.0
+#define MAX_SPEED 49.5                      // maximum speed in mph
+#define MIN_DISTANCE_TO_LEAD_VEHICLE 30.0   // minimum distance to the vehicle ahead in the same lane
+#define MIN_LANE_CHANGE_DISTANCE 5.0        // minimum distance to the vehicle ahead and behind on the target lane, needed for lane change
 
 HighwayDrivingBehavior::HighwayDrivingBehavior()
 = default;

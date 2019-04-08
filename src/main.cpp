@@ -19,11 +19,11 @@ using namespace std;
 HighwayDrivingBehavior highway_driving_behavior;
 
 // parameter to adjust path planning
-#define WAYPOINT_DISTANCE 50.0
-#define WAYPOINT_COUNT 3
-#define DT .02
-#define PATH_LENGTH 50
-#define MAX_ACC .224
+#define WAYPOINT_DISTANCE 50.0  // distance between the waypoints of the calculated path
+#define WAYPOINT_COUNT 3        // number of new waypoints to calculate
+#define DT .02                  // time interval in seconds in which the path planning is called
+#define PATH_LENGTH 50          // number of waypoints of the path
+#define MAX_ACC .224            // maximum acceleration
 
 int main()
 {
@@ -210,8 +210,7 @@ int main()
                             x_offset = x;
 
                             // convert back to map coordinates
-                            auto p = PointConverter::vehicle_to_map_coordinates(
-                                Point(x, y), Point(ref_x, ref_y), ref_yaw);
+                            auto p = PointConverter::vehicle_to_map_coordinates(Point(x, y), Point(ref_x, ref_y), ref_yaw);
 
                             next_x_vals.push_back(p.X);
                             next_y_vals.push_back(p.Y);
