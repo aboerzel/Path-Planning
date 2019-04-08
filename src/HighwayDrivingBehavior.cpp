@@ -18,7 +18,7 @@ HighwayDrivingBehavior::~HighwayDrivingBehavior()
 = default;
 
 DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const int current_lane,
-                                                      const vector<vector<double>>& sensor_fusion)
+                                                         const vector<vector<double>>& sensor_fusion)
 {
     // find leading vehicle on current lane
     const auto lead_vehicle = find_closest_vehicle(s, current_lane, sensor_fusion, true);
@@ -82,13 +82,13 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, cons
     // check vehicles in sensor range
     for (auto& vehicle : sensor_fusion)
     {
-        const auto vehicle_s = vehicle[5];
-        const auto vehicle_speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
         const auto vehicle_lane = LaneConverter::d_to_lane(vehicle[6]);
 
         // check only vehicles on the same lane
         if (vehicle_lane != lane)
             continue;
+
+        const auto vehicle_s = vehicle[5];
 
         if (forward)
         {
@@ -97,7 +97,7 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, cons
             if (vehicle_s > s && vehicle_distance < distance)
             {
                 distance = vehicle_distance;
-                speed = vehicle_speed;
+                speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
             }
         }
         else
@@ -107,12 +107,12 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, cons
             if (s >= vehicle_s && vehicle_distance < distance)
             {
                 distance = vehicle_distance;
-                speed = vehicle_speed;
+                speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
             }
         }
     }
 
-    // avoid dividing by zero
+    // avoid division by zero
     return {max(1.0, distance), speed};
 }
 
