@@ -113,22 +113,22 @@ int main()
                         // ********************* START PROJECT CODE **********************
 
                         int prev_path_size = previous_path_x.size();
-              
+
                         // start with previous path
                         for (auto i = 0; i < prev_path_size; i++)
                         {
                             next_x_vals.push_back(previous_path_x[i]);
                             next_y_vals.push_back(previous_path_y[i]);
                         }
-             
+
                         auto ref_x = car_x;
                         auto ref_y = car_y;
                         auto ref_yaw = deg2rad(car_yaw);
-               
+
                         vector<Point> path_points;
 
-                        if (prev_path_size < 2) 
-                        {                       
+                        if (prev_path_size < 2)
+                        {
                             auto prev_car_x = car_x - cos(car_yaw);
                             auto prev_car_y = car_y - sin(car_yaw);
 
@@ -138,7 +138,7 @@ int main()
                             // initialize reference speed with current car speed
                             ref_speed = car_speed;
                         }
-                        else 
+                        else
                         {
                             ref_y = previous_path_y[prev_path_size - 1];
 
@@ -147,7 +147,7 @@ int main()
                             double ref_y_prev = previous_path_y[prev_path_size - 2];
 
                             ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
-                          
+
                             path_points.push_back(Point(ref_x_prev, ref_y_prev));
                             path_points.push_back(Point(ref_x, ref_y));
                         }
@@ -155,6 +155,7 @@ int main()
                         auto frenet_vec = getFrenet(ref_x, ref_y, ref_yaw, map_waypoints_x, map_waypoints_y);
 
                         auto current_lane = LaneConverter::d_to_lane(frenet_vec[1]);
+
                         printf("%-22s: %4.2f\n", "current speed", ref_speed);
                         printf("%-22s: %d\n", "current lane", current_lane);
                         printf("%-22s: %4.2f\n", "current d", frenet_vec[1]);
@@ -165,9 +166,9 @@ int main()
                         printf("%-22s: %4.2f\n", "target speed", driving_action.speed);
                         printf("%-22s: %d\n", "target lane", driving_action.lane);
                         printf("%-22s: %4.2f\n", "target d", target_d);
-                       
+
                         // add new waypoints to following the desired lane
-                        for (auto i=1; i <= WAYPOINT_COUNT; i++)
+                        for (auto i = 1; i <= WAYPOINT_COUNT; i++)
                         {
                             auto wp = getXY(car_s + (i * WAYPOINT_DISTANCE), target_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
                             path_points.push_back(wp);
@@ -188,7 +189,7 @@ int main()
                         auto target_dist = sqrt(pow(target_x, 2) + pow(target_y, 2));
 
                         double x_offset = 0;
-                       
+
                         for (auto i = 0; i < PATH_LENGTH - prev_path_size; i++)
                         {
                             // accelerate / decelerate; ensure min/max speed
@@ -209,7 +210,8 @@ int main()
                             x_offset = x;
 
                             // convert back to map coordinates
-                            auto p = PointConverter::vehicle_to_map_coordinates(Point(x, y), Point(ref_x, ref_y), ref_yaw);
+                            auto p = PointConverter::vehicle_to_map_coordinates(
+                                Point(x, y), Point(ref_x, ref_y), ref_yaw);
 
                             next_x_vals.push_back(p.X);
                             next_y_vals.push_back(p.Y);
