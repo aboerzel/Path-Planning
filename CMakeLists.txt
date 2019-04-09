@@ -7,7 +7,7 @@ add_definitions(-std=c++11)
 set(CXX_FLAGS "-Wall")
 set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
 
-set(sources src/main.cpp src/Point.cpp src/HighwayDrivingBehavior.cpp src/LaneConverter.cpp src/PointConverter.cpp)
+set(sources src/main.cpp src/PathPlanner.cpp src/Point.cpp src/HighwayDrivingBehavior.cpp src/LaneConverter.cpp src/PointConverter.cpp)
 
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin") 

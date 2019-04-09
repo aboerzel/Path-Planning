@@ -39,3 +39,4 @@ public:
      */
     double Y;
 };
+

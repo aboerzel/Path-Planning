@@ -1,4 +1,5 @@
 #pragma once
+
 /**
  * Converts between d position in frenet coordinates and lane id.
  */
@@ -20,3 +21,4 @@ public:
      */
     static double lane_to_d(int lane);
 };
+

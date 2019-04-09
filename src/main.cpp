@@ -6,24 +6,13 @@
 #include "Eigen-3.3/Eigen/Core"
 #include "helpers.h"
 #include "json.hpp"
-#include "spline.h"
-#include "Point.h"
-#include "HighwayDrivingBehavior.h"
-#include "LaneConverter.h"
-#include "PointConverter.h"
+#include "PathPlanner.h"
 
 // for convenience
 using nlohmann::json;
 using namespace std;
 
-HighwayDrivingBehavior highway_driving_behavior;
-
-// parameter to adjust path planning
-#define WAYPOINT_DISTANCE 50.0  // distance between the waypoints of the calculated path
-#define WAYPOINT_COUNT 3        // number of new waypoints to calculate
-#define DT .02                  // time interval in seconds in which the path planning is called
-#define PATH_LENGTH 50          // number of waypoints of the path
-#define MAX_ACC .224            // maximum acceleration
+PathPlanner path_planner;
 
 int main()
 {
@@ -64,9 +53,7 @@ int main()
         map_waypoints_dy.push_back(d_y);
     }
 
-    auto ref_speed = 0.0; // reference speed [mph]
-
-    h.onMessage([&ref_speed, &map_waypoints_x,&map_waypoints_y,&map_waypoints_s, &map_waypoints_dx,&map_waypoints_dy]
+    h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s, &map_waypoints_dx,&map_waypoints_dy]
     (uWS::WebSocket<uWS::SERVER> ws, char* data, size_t length, uWS::OpCode opCode)
         {
             // "42" at the start of the message means there's a websocket message event.
@@ -105,121 +92,19 @@ int main()
                         //   of the road.
                         auto sensor_fusion = j[1]["sensor_fusion"];
 
-                        json msgJson;
-
-                        vector<double> next_x_vals;
-                        vector<double> next_y_vals;
 
                         // ********************* START PROJECT CODE **********************
 
-                        int prev_path_size = previous_path_x.size();
+                        auto path = path_planner.calculate_path(previous_path_x, previous_path_y, map_waypoints_s,
+                                                                map_waypoints_x, map_waypoints_y, sensor_fusion,
+                                                                car_x, car_y, car_yaw, car_speed, car_s);
 
-                        // start with previous path
-                        for (auto i = 0; i < prev_path_size; i++)
-                        {
-                            next_x_vals.push_back(previous_path_x[i]);
-                            next_y_vals.push_back(previous_path_y[i]);
-                        }
+                        json msgJson;
 
-                        auto ref_x = car_x;
-                        auto ref_y = car_y;
-                        auto ref_yaw = deg2rad(car_yaw);
-
-                        vector<Point> path_points;
-
-                        if (prev_path_size < 2)
-                        {
-                            auto prev_car_x = car_x - cos(car_yaw);
-                            auto prev_car_y = car_y - sin(car_yaw);
-
-                            path_points.push_back(Point(prev_car_x, prev_car_y));
-                            path_points.push_back(Point(car_x, car_y));
-
-                            // initialize reference speed with current car speed
-                            ref_speed = car_speed;
-                        }
-                        else
-                        {
-                            ref_y = previous_path_y[prev_path_size - 1];
-
-                            ref_x = previous_path_x[prev_path_size - 1];
-                            double ref_x_prev = previous_path_x[prev_path_size - 2];
-                            double ref_y_prev = previous_path_y[prev_path_size - 2];
-
-                            ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
-
-                            path_points.push_back(Point(ref_x_prev, ref_y_prev));
-                            path_points.push_back(Point(ref_x, ref_y));
-                        }
-
-                        auto frenet_vec = getFrenet(ref_x, ref_y, ref_yaw, map_waypoints_x, map_waypoints_y);
-
-                        auto current_lane = LaneConverter::d_to_lane(frenet_vec[1]);
-
-                        printf("%-22s: %4.2f\n", "current speed", ref_speed);
-                        printf("%-22s: %d\n", "current lane", current_lane);
-                        printf("%-22s: %4.2f\n", "current d", frenet_vec[1]);
-
-                        auto driving_action = highway_driving_behavior.get_driving_action(frenet_vec[0], current_lane, sensor_fusion);
-                        auto target_d = LaneConverter::lane_to_d(driving_action.lane);
-
-                        printf("%-22s: %4.2f\n", "target speed", driving_action.speed);
-                        printf("%-22s: %d\n", "target lane", driving_action.lane);
-                        printf("%-22s: %4.2f\n", "target d", target_d);
-
-                        // add new waypoints to following the desired lane
-                        for (auto i = 1; i <= WAYPOINT_COUNT; i++)
-                        {
-                            auto wp = getXY(car_s + (i * WAYPOINT_DISTANCE), target_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-                            path_points.push_back(wp);
-                        }
-
-                        // convert spline points from map coordinates to vehicle coordinates
-                        for (auto i = 0; i < path_points.size(); i++)
-                        {
-                            path_points[i] = PointConverter::map_to_vehicle_coordinates(path_points[i], Point(ref_x, ref_y), ref_yaw);
-                        }
-
-                        // create spline
-                        tk::spline spline;
-                        spline.set_points(get_x_values(path_points), get_y_values(path_points));
-
-                        auto target_x = WAYPOINT_DISTANCE;
-                        auto target_y = spline(target_x);
-                        auto target_dist = sqrt(pow(target_x, 2) + pow(target_y, 2));
-
-                        double x_offset = 0;
-
-                        for (auto i = 0; i < PATH_LENGTH - prev_path_size; i++)
-                        {
-                            // accelerate / decelerate; ensure min/max speed
-                            if (ref_speed < driving_action.speed - MAX_ACC)
-                            {
-                                ref_speed += MAX_ACC;
-                            }
-                            else if (ref_speed > driving_action.speed + MAX_ACC)
-                            {
-                                ref_speed -= MAX_ACC;
-                            }
-
-                            // calculate points along new path
-                            auto N = target_dist / (DT * ref_speed / (10 * MAX_ACC));
-                            auto x = x_offset + target_x / N;
-                            auto y = spline(x);
-
-                            x_offset = x;
-
-                            // convert back to map coordinates
-                            auto p = PointConverter::vehicle_to_map_coordinates(Point(x, y), Point(ref_x, ref_y), ref_yaw);
-
-                            next_x_vals.push_back(p.X);
-                            next_y_vals.push_back(p.Y);
-                        }
-
+                        msgJson["next_x"] = get_x_values(path);
+                        msgJson["next_y"] = get_y_values(path);
+                        
                         // ********************* END PROJECT CODE **********************
-
-                        msgJson["next_x"] = next_x_vals;
-                        msgJson["next_y"] = next_y_vals;
 
                         auto msg = "42[\"control\"," + msgJson.dump() + "]";
 
