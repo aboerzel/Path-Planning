@@ -28,8 +28,10 @@ public:
      * @return Next path the vehicle should drive
      */
     vector<Point> calculate_path(const vector<double>& previous_path_x, const vector<double>& previous_path_y,
-                                 const vector<double>& map_waypoints_s, const vector<double>& map_waypoints_x, const vector<double>& map_waypoints_y, 
-                                 const vector<vector<double>>& sensor_fusion, double car_x, double car_y, double car_yaw, double car_speed, double car_s);
+                                 const vector<double>& map_waypoints_s, const vector<double>& map_waypoints_x,
+                                 const vector<double>& map_waypoints_y,
+                                 const vector<vector<double>>& sensor_fusion, 
+                                 double car_x, double car_y, double car_yaw, double car_speed, double car_s);
 
 private:
 
@@ -41,5 +43,5 @@ private:
     /**
      * Reference speed [mph]
      */
-    double ref_speed = 0.0; };
-
+    double ref_speed = 0.0;
+};
