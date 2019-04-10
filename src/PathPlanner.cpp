@@ -92,7 +92,7 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
         path_points.push_back(wp);
     }
 
-    // convert spline points from map coordinates to vehicle coordinates
+    // convert path points from map coordinates to vehicle coordinates
     for (auto& path_point : path_points)
     {
         path_point = PointConverter::map_to_vehicle_coordinates(path_point, Point(ref_x, ref_y), ref_yaw);
