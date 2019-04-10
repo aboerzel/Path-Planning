@@ -10,7 +10,7 @@ using namespace std;
 #define MAX_SPEED 49.5                      // maximum speed in mph
 #define MIN_DISTANCE_TO_LEAD_VEHICLE 30.0   // minimum distance to the vehicle ahead in the same lane
 #define MIN_LANE_CHANGE_DISTANCE_AHEAD 30.0 // minimum distance to the vehicle ahead on the target lane, needed for lane change
-#define MIN_LANE_CHANGE_DISTANCE_BACK 100.0 // minimum distance to the vehicle behind on the target lane, needed for lane change
+#define MIN_LANE_CHANGE_DISTANCE_BACK 50.0  // minimum distance to the vehicle behind on the target lane, needed for lane change
 
 HighwayDrivingBehavior::HighwayDrivingBehavior()
 = default;
@@ -137,14 +137,14 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
         }
         else
         {
-            if (vehicle_ahead[0] < 15)
+            if (vehicle_ahead[0] < 10)
             {
-                scores[i] -= 5; // distance to the vehicle ahead is too close., negative score
+                scores[i] -= 5; // distance to the vehicle ahead is too close, negative score
             }
 
             if (vehicle_behind[0] < 15)
             {
-                scores[i] -= 5; // distance to the vehicle behind is too close., negative score
+                scores[i] -= 5; // distance to the vehicle behind is too close, negative score
             }
 
             scores[i] += 1 - (10 / (vehicle_ahead[0] / 3)); // large distance to the vehicle ahead
