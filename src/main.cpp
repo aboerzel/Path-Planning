@@ -88,21 +88,18 @@ int main()
                         double end_path_s = j[1]["end_path_s"];
                         double end_path_d = j[1]["end_path_d"];
 
-                        // Sensor Fusion Data, a list of all other cars on the same side 
-                        //   of the road.
+                        // Sensor Fusion Data, a list of all other cars on the same side of the road.
                         auto sensor_fusion = j[1]["sensor_fusion"];
-
 
                         // ********************* START PROJECT CODE **********************
 
-                        auto path = path_planner.calculate_path(previous_path_x, previous_path_y, map_waypoints_s,
-                                                                map_waypoints_x, map_waypoints_y, sensor_fusion,
-                                                                car_x, car_y, car_yaw, car_speed, car_s);
+                        auto new_path = path_planner.calculate_path(previous_path_x, previous_path_y, 
+                                                                    map_waypoints_s, map_waypoints_x, map_waypoints_y, 
+                                                                    sensor_fusion, car_x, car_y, car_yaw, car_speed, car_s);
 
                         json msgJson;
-
-                        msgJson["next_x"] = get_x_values(path);
-                        msgJson["next_y"] = get_y_values(path);
+                        msgJson["next_x"] = get_x_values(new_path);
+                        msgJson["next_y"] = get_y_values(new_path);
                         
                         // ********************* END PROJECT CODE **********************
 
