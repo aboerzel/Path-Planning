@@ -9,7 +9,8 @@ using namespace std;
 // parameter to adjust driving behavior
 #define MAX_SPEED 49.5                      // maximum speed in mph
 #define MIN_DISTANCE_TO_LEAD_VEHICLE 30.0   // minimum distance to the vehicle ahead in the same lane
-#define MIN_LANE_CHANGE_DISTANCE 20.0       // minimum distance to the vehicle ahead and behind on the target lane, needed for lane change
+#define MIN_LANE_CHANGE_DISTANCE_AHEAD 30.0 // minimum distance to the vehicle ahead on the target lane, needed for lane change
+#define MIN_LANE_CHANGE_DISTANCE_BACK 100.0 // minimum distance to the vehicle behind on the target lane, needed for lane change
 
 HighwayDrivingBehavior::HighwayDrivingBehavior()
 = default;
@@ -45,7 +46,7 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     auto new_vehicle_behind = find_closest_vehicle(s, new_lane, sensor_fusion, false);
 
     // check if there is enough room to change the lane
-    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE ||
+    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BACK ||
         avg_scores[new_lane] <= -5)
     {
         // it's not possible to change the lane => remain on current lane
@@ -124,38 +125,38 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
     {
         if (i == lane)
         {
-            scores[i] += 0.5; // benefit to keeping lane
+            scores[i] += 0.5; // keeping lane
         }
 
         auto vehicle_ahead = find_closest_vehicle(s, i, sensor_fusion, true);
         auto vehicle_behind = find_closest_vehicle(s, i, sensor_fusion, false);
 
-        if (vehicle_ahead[0] > 100 && vehicle_behind[0] > 100)
+        if (vehicle_ahead[0] > 1000 && vehicle_behind[0] > MIN_LANE_CHANGE_DISTANCE_BACK)
         {
-            scores[i] += 5; // if wide open lane, move into that lane
+            scores[i] += 5; // wide open lane => change to that lane
         }
         else
         {
-            if (vehicle_ahead[0] < 10)
+            if (vehicle_ahead[0] < 15)
             {
-                scores[i] -= 5; // if car too close in front, negative score
+                scores[i] -= 5; // distance to the vehicle ahead is too close., negative score
             }
 
-            if (vehicle_behind[0] < 10)
+            if (vehicle_behind[0] < 15)
             {
-                scores[i] -= 5; // if car too close in back, negative score
+                scores[i] -= 5; // distance to the vehicle behind is too close., negative score
             }
 
-            scores[i] += 1 - (10 / (vehicle_ahead[0] / 3)); // benefit for large open distance in lane in front
+            scores[i] += 1 - (10 / (vehicle_ahead[0] / 3)); // large distance to the vehicle ahead
 
-            scores[i] += 1 - (10 / (vehicle_behind[0] / 3)); // benefit for large open distance in lane in back
+            scores[i] += 1 - (10 / (vehicle_behind[0] / 3)); // large distance to the vehicle behind
 
-            scores[i] += 1 - (10 / (vehicle_ahead[1] / 2)); // benefit for faster car speed in lane in front
+            scores[i] += 1 - (10 / (vehicle_ahead[1] / 2)); // faster speed ahead
 
-            scores[i] += 1 / (vehicle_behind[1] / 2); // benefit for slower car speed in lane in back
+            scores[i] += 1 / (vehicle_behind[1] / 2); // slower speed behind
         }
 
-        // simple average calculation for scores over the last 10 iterations
+        // Use the average of the last 10 scores to avoid massive changing driving actions
         avg_scores[i] = (avg_scores[i] * 10) - avg_scores[i];
         avg_scores[i] += scores[i];
         avg_scores[i] /= 10;
