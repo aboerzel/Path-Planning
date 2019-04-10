@@ -109,6 +109,7 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
 
     double x_offset = 0;
 
+    // create new path points and add them to the new path
     for (auto i = 0; i < PATH_LENGTH - prev_path_size; i++)
     {
         // accelerate / decelerate; ensure min/max speed
