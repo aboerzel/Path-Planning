@@ -10,7 +10,7 @@
 #define WAYPOINT_COUNT 3        // number of new waypoints to calculate
 #define DT .02                  // time interval in seconds in which the path planning is called
 #define PATH_LENGTH 50          // number of waypoints of the path
-#define MAX_ACC .224            // maximum acceleration
+#define ACCELERATION .224       // acceleration
 
 PathPlanner::PathPlanner()
 {
@@ -35,30 +35,34 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
         new_path.push_back(Point(previous_path_x[i], previous_path_y[i]));
     }
 
-    auto ref_x = car_x;
-    auto ref_y = car_y;
-    auto ref_yaw = deg2rad(car_yaw);
+    double ref_x;
+    double ref_y;
+    double ref_yaw;
 
     vector<Point> path_points;
 
     if (prev_path_size < 2)
     {
+        ref_x = car_x;
+        ref_y = car_y;
+        ref_yaw = deg2rad(car_yaw);
+
         auto prev_car_x = car_x - cos(car_yaw);
         auto prev_car_y = car_y - sin(car_yaw);
 
         path_points.push_back(Point(prev_car_x, prev_car_y));
         path_points.push_back(Point(car_x, car_y));
 
-        // initialize reference speed with current car speed
+        // initialize reference speed with current car speed, to get a smooth velocity
         ref_speed = car_speed;
     }
     else
     {
         ref_y = previous_path_y[prev_path_size - 1];
-
         ref_x = previous_path_x[prev_path_size - 1];
-        double ref_x_prev = previous_path_x[prev_path_size - 2];
-        double ref_y_prev = previous_path_y[prev_path_size - 2];
+
+        auto ref_x_prev = previous_path_x[prev_path_size - 2];
+        auto ref_y_prev = previous_path_y[prev_path_size - 2];
 
         ref_yaw = atan2(ref_y - ref_y_prev, ref_x - ref_x_prev);
 
@@ -94,7 +98,7 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
         path_point = PointConverter::map_to_vehicle_coordinates(path_point, Point(ref_x, ref_y), ref_yaw);
     }
 
-    // create spline
+    // create spline from path points
     tk::spline spline;
     spline.set_points(get_x_values(path_points), get_y_values(path_points));
 
@@ -107,17 +111,17 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
     for (auto i = 0; i < PATH_LENGTH - prev_path_size; i++)
     {
         // accelerate / decelerate; ensure min/max speed
-        if (ref_speed < driving_action.speed - MAX_ACC)
+        if (ref_speed < driving_action.speed - ACCELERATION)
         {
-            ref_speed += MAX_ACC;
+            ref_speed += ACCELERATION;
         }
-        else if (ref_speed > driving_action.speed + MAX_ACC)
+        else if (ref_speed > driving_action.speed + ACCELERATION)
         {
-            ref_speed -= MAX_ACC;
+            ref_speed -= ACCELERATION;
         }
 
         // calculate points along new path
-        auto N = target_dist / (DT * ref_speed / (10 * MAX_ACC));
+        auto N = target_dist / (DT * ref_speed / (10 * ACCELERATION));
         auto x = x_offset + target_x / N;
         auto y = spline(x);
 
