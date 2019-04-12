@@ -7,7 +7,7 @@
 using namespace std;
 
 // parameter to adjust driving behavior
-#define MAX_SPEED 49.5                      // maximum speed in mph
+#define MAX_SPEED 22.12848                  // maximum speed in [m/sec] => 49.5 MPS
 #define MIN_DISTANCE_TO_LEAD_VEHICLE 30.0   // minimum distance to the vehicle ahead in the same lane
 #define MIN_LANE_CHANGE_DISTANCE_AHEAD 30.0 // minimum distance to the vehicle ahead on the target lane, needed for lane change
 #define MIN_LANE_CHANGE_DISTANCE_BACK 50.0  // minimum distance to the vehicle behind on the target lane, needed for lane change
@@ -77,8 +77,8 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, cons
                                                             const vector<vector<double>>& sensor_fusion,
                                                             const bool forward)
 {
-    double distance = 10000;
-    auto speed = MAX_SPEED;
+    double distance = 10000;    // distance out of range
+    auto speed = MAX_SPEED;     // use max. speed if no vehicle in lane
 
     // check vehicles in sensor range
     for (auto& vehicle : sensor_fusion)

@@ -41,7 +41,7 @@ private:
     HighwayDrivingBehavior highway_driving_behavior;
 
     /**
-     * Reference speed [mph]
+     * Reference speed [m/s]
      */
     double ref_speed = 0.0;
 };

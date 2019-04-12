@@ -9,7 +9,7 @@ using std::vector;
 struct DrivingAction 
 {
     int lane;       // target lane
-    double speed;   // target speed
+    double speed;   // target speed [m/s]
 };  
 
 /**
