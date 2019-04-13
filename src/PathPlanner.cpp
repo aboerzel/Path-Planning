@@ -11,7 +11,7 @@
 #define WAYPOINT_COUNT 3            // number of new waypoints to calculate
 #define DT .02                      // time interval in seconds in which the path planning is called
 #define PATH_LENGTH 50              // number of waypoints of the path
-#define MAX_ACCEL (10.0 * 0.95)     // max acceleration [m/s²] => 10 m/s² * 0.95
+#define MAX_ACCEL (9.5)             // max acceleration [m/s²] => 10 m/s² * 0.95 => 9.5 m/s²
 #define V_DIFF (MAX_ACCEL * DT)     // speed difference per time interval DT [m/s]
 
 PathPlanner::PathPlanner()
