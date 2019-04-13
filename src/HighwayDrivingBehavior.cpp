@@ -8,14 +8,16 @@
 using namespace std;
 
 // parameter to adjust driving behavior
-#define MAX_SPEED 22.12848                  // maximum speed in [m/sec] => 49.5 MPS
-#define MIN_DISTANCE_TO_LEAD_VEHICLE 30.0   // minimum distance [m] to the vehicle ahead in the same lane 
-#define MIN_LANE_CHANGE_DISTANCE_AHEAD 30.0 // minimum distance [m] to the vehicle ahead on the target lane, needed for lane change
-#define MIN_LANE_CHANGE_DISTANCE_BACK 50.0  // minimum distance [m] to the vehicle behind on the target lane, needed for lane change
-#define MIN_DISTANCE 5.0                    // minimum distance [m] to the vehicle ahead regardless of the speed
+#define MAX_SPEED 22.12848                      // maximum speed in [m/sec] => 49.5 MPS
+#define MIN_LANE_CHANGE_DISTANCE_AHEAD 30.0     // minimum distance [m] to the vehicle ahead on the target lane, needed for lane change
+#define MIN_LANE_CHANGE_DISTANCE_BEHIND 30.0    // minimum distance [m] to the vehicle behind on the target lane, needed for lane change
+#define MIN_DISTANCE 5.0                        // minimum distance [m] to the vehicle ahead regardless of the speed
 
 HighwayDrivingBehavior::HighwayDrivingBehavior()
-= default;
+{
+    // our speed target is the maximum speed allowed on highways
+    target_speed = MAX_SPEED;
+}
 
 HighwayDrivingBehavior::~HighwayDrivingBehavior()
 = default;
@@ -28,18 +30,6 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     const auto lead_vehicle_distance = lead_vehicle[0];
     const auto lead_vehicle_speed = lead_vehicle[1];
 
-    // we don't need to change the lane if the distance to leading car is big enough
-    //if (lead_vehicle_distance > MIN_DISTANCE_TO_LEAD_VEHICLE)
-    //{
-    //    printf("%-22s: %4.2f m\n", "lead vehicle distance", lead_vehicle_distance);
-    //    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", lead_vehicle_speed, SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed));
-
-    //    avg_scores = {0, 0, 0}; // reset average score
-
-    //    // drive at maximum speed in this case
-    //    return DrivingAction{current_lane, MAX_SPEED};
-    //}
-
     // check if it's better to change the lane
     const auto new_lane = get_best_lane(s, current_lane, sensor_fusion);
 
@@ -48,17 +38,17 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     auto new_vehicle_behind = find_closest_vehicle(s, new_lane, sensor_fusion, false);
 
     // check if there is enough room to change the lane
-    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BACK
-        || avg_scores[new_lane] <= -5)
+    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
     {
         // it's not possible to change the lane => remain on current lane
         printf("%-22s: %4.2f m\n", "lead vehicle distance", lead_vehicle_distance);
-        printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", lead_vehicle_speed, SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed));
+        printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", lead_vehicle_speed,
+               SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed));
 
         // ensure safety distance to the leading vehicle on the current lane
         // adjust the speed to the speed of the leading vehicle on the current lane
         if (lead_vehicle_distance < get_dynamic_safety_distance(lead_vehicle_speed))
-            return DrivingAction{current_lane, min(lead_vehicle_speed, MAX_SPEED)};
+            return DrivingAction{current_lane, min(lead_vehicle_speed, target_speed)};
 
         // drive with max speed if the distance to leading vehicle is big enough
         return DrivingAction{current_lane, get_dynamic_speed_from_distance(lead_vehicle_distance)};
@@ -66,12 +56,13 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
 
     // it's possible to change the lane => change to the new lane
     printf("%-22s: %4.2f m\n", "lead vehicle distance", new_vehicle_ahead[0]);
-    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", new_vehicle_ahead[1], SpeedConverter::km_per_sec_to_miles_per_hour(new_vehicle_ahead[1]));
+    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", new_vehicle_ahead[1],
+           SpeedConverter::km_per_sec_to_miles_per_hour(new_vehicle_ahead[1]));
 
     // ensure safety distance to the leading vehicle on the new lane
     // adjust the speed to the speed of the leading vehicle on the new lane
     if (new_vehicle_ahead[0] < get_dynamic_safety_distance(new_vehicle_ahead[1]))
-        return DrivingAction{new_lane, min(new_vehicle_ahead[1], MAX_SPEED)};
+        return DrivingAction{new_lane, min(new_vehicle_ahead[1], target_speed)};
 
     // drive with max speed if the distance to leading vehicle is big enough
     return DrivingAction{new_lane, get_dynamic_speed_from_distance(new_vehicle_ahead[0])};
@@ -132,31 +123,36 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
 
         if (i == lane && vehicle_ahead[0] > 1000)
         {
-            scores[i] += 5; // no vehicle ahead in current lane => keep current lane
+            scores[i] += 10; // no vehicle ahead in current lane => keep current lane
         }
-        else if (i != lane && vehicle_ahead[0] > 1000 && vehicle_behind[0] > MIN_LANE_CHANGE_DISTANCE_BACK)
+        else if (i != lane && vehicle_ahead[0] > 1000 && vehicle_behind[0] > MIN_LANE_CHANGE_DISTANCE_BEHIND)
         {
-            scores[i] += 4; // wide open lane => change to that lane
+            scores[i] += 5; // wide open lane => change to that lane
         }
-        else
+
+        if (vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD)
         {
-            if (vehicle_ahead[0] < 10)
-            {
-                scores[i] -= 5; // distance to the vehicle ahead is too close, negative score
-            }
+            scores[i] -= 10; // distance to the vehicle ahead is too close, negative score
+        }
 
-            if (vehicle_behind[0] < 15)
-            {
-                scores[i] -= 5; // distance to the vehicle behind is too close, negative score
-            }
+        if (vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
+        {
+            scores[i] -= 10; // distance to the vehicle behind is too close, negative score
+        }
 
-            scores[i] += 1 - (10 / (vehicle_ahead[0] / 3)); // large distance to the vehicle ahead
+        if (vehicle_ahead[0] > 1000)
+        {
+            scores[i] += 1; // large distance to the vehicle ahead
+        }
 
-            scores[i] += 1 - (10 / (vehicle_behind[0] / 3)); // large distance to the vehicle behind
+        if (vehicle_behind[0] > 1000)
+        {
+            scores[i] += 1; // large distance to the vehicle behind
+        }
 
-            scores[i] += 1 - (10 / (vehicle_ahead[1] / 2)); // faster speed ahead
-
-            scores[i] += 1 / (vehicle_behind[1] / 2); // slower speed behind
+        if (vehicle_ahead[1] >= MAX_SPEED)
+        {
+            scores[i] += 1; // faster speed ahead
         }
 
         // Use the average of the last 10 scores to avoid massive changing driving actions
@@ -192,5 +188,5 @@ double HighwayDrivingBehavior::get_dynamic_speed_from_distance(const double lead
 {
     // rule of thumb: velocity [km/h] * 0,5 <=> safety distance [m]
     // distance [m/s] * 2 <=> velocity [km/h] => velocity [km/h] / 3.6 = velocity [m/s] => factor = 2 / 3.6 = 0.555
-    return min(lead_vehicle_distance * 0.555, MAX_SPEED); // ensure max speed
+    return min(lead_vehicle_distance * 0.555, target_speed); // ensure max speed
 }
