@@ -73,7 +73,7 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, cons
                                                             const bool forward)
 {
     double distance = 10000; // distance out of range
-    auto speed = MAX_SPEED; // use max. speed if no vehicle in lane
+    auto speed = target_speed; // use target speed if no vehicle in lane
 
     // check vehicles in sensor range
     for (auto& vehicle : sensor_fusion)
@@ -116,6 +116,8 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
 {
     vector<double> scores = {0, 0, 0};
 
+    auto vehicle_ahead_in_lane = find_closest_vehicle(s, lane, sensor_fusion, true);
+
     for (auto i = 0; i < 3; i++)
     {
         auto vehicle_ahead = find_closest_vehicle(s, i, sensor_fusion, true);
@@ -150,7 +152,7 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
             scores[i] += 10; // large distance to the vehicle behind
         }
 
-        if (vehicle_ahead[1] >= MAX_SPEED)
+        if (vehicle_ahead[1] > vehicle_ahead_in_lane[1])
         {
             scores[i] += 10; // faster speed ahead
         }
