@@ -52,6 +52,10 @@ private:
      */
     int get_best_lane(double s, int lane, const vector<vector<double>>& sensor_fusion);
 
+    double get_dynamic_safety_distance(double lead_vehicle_speed);
+
+    double get_dynamic_speed_from_distance(double lead_vehicle_distance);
+
     vector<double> avg_scores = { 0,0,0 };
 };
 
