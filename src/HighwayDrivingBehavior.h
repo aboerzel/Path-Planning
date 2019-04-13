@@ -6,11 +6,11 @@ using std::vector;
 /**
  * Driving action to be performed
  */
-struct DrivingAction 
+struct DrivingAction
 {
-    int lane;       // target lane
-    double speed;   // target speed [m/s]
-};  
+    int lane; // target lane
+    double speed; // target speed [m/s]
+};
 
 /**
  * Determines the best driving action for driving on a highway, 
@@ -66,7 +66,8 @@ private:
      */
     double get_dynamic_speed_from_distance(double lead_vehicle_distance);
 
-    vector<double> avg_scores = { 0,0,0 };
+
+    double target_speed; // target speed [m/s]
+
+    vector<double> avg_scores = {0, 0, 0};
 };
-
-
