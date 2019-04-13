@@ -52,8 +52,18 @@ private:
      */
     int get_best_lane(double s, int lane, const vector<vector<double>>& sensor_fusion);
 
+    /**
+     * Calculates a safe distance to the leading vehicle given by the leading vehicle speed
+     * \param lead_vehicle_speed Speed of the leading vehicle [m/s]
+     * \return Safety distance to the leading vehicle [m]
+     */
     double get_dynamic_safety_distance(double lead_vehicle_speed);
 
+    /**
+     * Calculates a  
+     * \param lead_vehicle_distance 
+     * \return 
+     */
     double get_dynamic_speed_from_distance(double lead_vehicle_distance);
 
     vector<double> avg_scores = { 0,0,0 };
