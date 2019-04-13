@@ -6,6 +6,7 @@
 #include <vector>
 #include "Point.h"
 #include <thread>
+#include <iostream>
 
 // for convenience
 using std::string;
@@ -48,7 +49,7 @@ inline double distance(double x1, double y1, double x2, double y2)
 
 // Calculate closest waypoint to current x, y position
 inline int ClosestWaypoint(double x, double y, const vector<double>& maps_x,
-                    const vector<double>& maps_y)
+                           const vector<double>& maps_y)
 {
     double closestLen = 100000; //large number
     int closestWaypoint = 0;
@@ -70,7 +71,7 @@ inline int ClosestWaypoint(double x, double y, const vector<double>& maps_x,
 
 // Returns next waypoint of the closest waypoint
 inline int NextWaypoint(double x, double y, double theta, const vector<double>& maps_x,
-                 const vector<double>& maps_y)
+                        const vector<double>& maps_y)
 {
     int closestWaypoint = ClosestWaypoint(x, y, maps_x, maps_y);
 
@@ -96,8 +97,8 @@ inline int NextWaypoint(double x, double y, double theta, const vector<double>& 
 
 // Transform from Cartesian x,y coordinates to Frenet s,d coordinates
 inline vector<double> getFrenet(double x, double y, double theta,
-                         const vector<double>& maps_x,
-                         const vector<double>& maps_y)
+                                const vector<double>& maps_x,
+                                const vector<double>& maps_y)
 {
     int next_wp = NextWaypoint(x, y, theta, maps_x, maps_y);
 
@@ -145,8 +146,8 @@ inline vector<double> getFrenet(double x, double y, double theta,
 
 // Transform from Frenet s,d coordinates to Cartesian x,y
 inline vector<double> getXY(double s, double d, const vector<double>& maps_s,
-                     const vector<double>& maps_x,
-                     const vector<double>& maps_y)
+                            const vector<double>& maps_x,
+                            const vector<double>& maps_y)
 {
     int prev_wp = -1;
 
@@ -201,6 +202,15 @@ inline vector<double> get_y_values(vector<Point> points)
         result.push_back(p.Y);
     }
     return result;
+}
+
+/**
+ * Clears the console output
+ */
+inline void clear_console()
+{
+    // CSI[2J clears screen, CSI[H moves the cursor to top-left corner
+    std::cout << "\x1B[2J\x1B[H";
 }
 
 #endif  // HELPERS_H

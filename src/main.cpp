@@ -93,6 +93,8 @@ int main()
 
                         // ********************* START PROJECT CODE **********************
 
+                        clear_console();
+
                         auto new_path = path_planner.calculate_path(previous_path_x, previous_path_y, 
                                                                     map_waypoints_s, map_waypoints_x, map_waypoints_y, 
                                                                     sensor_fusion, car_x, car_y, car_yaw, car_speed, car_s);
