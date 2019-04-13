@@ -123,36 +123,36 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
 
         if (i == lane && vehicle_ahead[0] > 1000)
         {
-            scores[i] += 10; // no vehicle ahead in current lane => keep current lane
+            scores[i] += 40; // no vehicle ahead in current lane => keep current lane
         }
         else if (i != lane && vehicle_ahead[0] > 1000 && vehicle_behind[0] > MIN_LANE_CHANGE_DISTANCE_BEHIND)
         {
-            scores[i] += 5; // wide open lane => change to that lane
+            scores[i] += 35; // wide open lane => change to that lane
         }
 
-        if (vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD)
+        if (vehicle_ahead[0] > MIN_LANE_CHANGE_DISTANCE_AHEAD)
         {
-            scores[i] -= 10; // distance to the vehicle ahead is too close, negative score
+            scores[i] += 5; // distance to the vehicle ahead is too close, negative score
         }
 
-        if (vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
+        if (vehicle_behind[0] > MIN_LANE_CHANGE_DISTANCE_BEHIND)
         {
-            scores[i] -= 10; // distance to the vehicle behind is too close, negative score
+            scores[i] += 5; // distance to the vehicle behind is too close, negative score
         }
 
         if (vehicle_ahead[0] > 1000)
         {
-            scores[i] += 1; // large distance to the vehicle ahead
+            scores[i] += 10; // large distance to the vehicle ahead
         }
 
         if (vehicle_behind[0] > 1000)
         {
-            scores[i] += 1; // large distance to the vehicle behind
+            scores[i] += 10; // large distance to the vehicle behind
         }
 
         if (vehicle_ahead[1] >= MAX_SPEED)
         {
-            scores[i] += 1; // faster speed ahead
+            scores[i] += 10; // faster speed ahead
         }
 
         // Use the average of the last 10 scores to avoid massive changing driving actions
