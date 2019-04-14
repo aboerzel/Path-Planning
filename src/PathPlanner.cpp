@@ -7,7 +7,7 @@
 #include "SpeedConverter.h"
 
 // parameter to adjust path planning
-#define WAYPOINT_DISTANCE 50.0      // distance between the waypoints of the calculated path
+#define WAYPOINT_DISTANCE 60.0      // distance between the waypoints of the calculated path
 #define WAYPOINT_COUNT 3            // number of new waypoints to calculate
 #define DT .02                      // time interval in seconds in which the path planning is called
 #define PATH_LENGTH 50              // number of waypoints of the path
