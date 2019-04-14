@@ -40,6 +40,8 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     // check if there is enough room to change the lane
     if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
     {
+        avg_scores = { 0, 0, 0 }; // reset average score
+
         // it's not possible to change the lane => remain on current lane
         printf("%-22s: %4.2f m\n", "lead vehicle distance", lead_vehicle_distance);
         printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", lead_vehicle_speed,
@@ -127,7 +129,8 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
         {
             scores[i] += 50; // no vehicle ahead in current lane => keep current lane
         }
-        else if (i != lane && vehicle_ahead[0] > 1000 && vehicle_behind[0] > MIN_LANE_CHANGE_DISTANCE_BEHIND)
+        
+        if (i != lane && vehicle_ahead[0] > 1000 && vehicle_behind[0] > MIN_LANE_CHANGE_DISTANCE_BEHIND)
         {
             scores[i] += 30; // wide open lane => change to that lane
         }
@@ -144,10 +147,10 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const 
 
         if (vehicle_ahead[1] > vehicle_ahead_in_lane[1])
         {
-            scores[i] += 5; // faster speed ahead
+            scores[i] += 10; // faster speed ahead than current lane speed
         }
 
-        if (vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
+        if (i != lane && vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
         {
             scores[i] = 0; // gap to small for lane change => don't change to this lane
         }
