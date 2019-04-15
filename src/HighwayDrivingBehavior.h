@@ -1,16 +1,9 @@
 #pragma once
 #include <vector>
+#include <string>
 
+using namespace std;
 using std::vector;
-
-/**
- * Driving action to be performed
- */
-struct DrivingAction
-{
-    int lane; // target lane
-    double speed; // target speed [m/s]
-};
 
 /**
  * Determines the best driving action for driving on a highway, 
@@ -30,9 +23,15 @@ public:
      * @param sensor_fusion Sensor data regarding other vehicles.
      * @return Driving action (target lane and speed) to be performed
      */
-    DrivingAction get_driving_action(double s, int current_lane, double current_speed, const vector<vector<double>>& sensor_fusion);
+    void update(double s, int current_lane, double current_speed, const vector<vector<double>>& sensor_fusion);
+
+    double target_speed; // target speed [m/s]
+
+    int target_lane;
 
 private:
+
+    enum BehaviorState { KeepLane, PrepareLaneChangeLeft, PrepareLaneChangeRight, LaneChangeLeft, LaneChangeRight };
 
     /**
      * Determines the distance and the speed of the closest vehicle in the specified lane and direction. 
@@ -42,7 +41,8 @@ private:
      * @param forward Direction in, which is searched for vehicles (true = forward, false = backwards)
      * @return Distance and speed of the closest vehicle in the given direction
      */
-    vector<double> find_closest_vehicle(double s, int current_lane, const vector<vector<double>>& sensor_fusion, bool forward);
+    vector<double> find_closest_vehicle(double s, int current_lane, const vector<vector<double>>& sensor_fusion,
+                                        bool forward);
 
     /**
      * Determines the best lane considering the current traffic situation.
@@ -68,5 +68,26 @@ private:
      */
     double get_dynamic_speed_from_distance(double lead_vehicle_distance);
 
-    double target_speed; // target speed [m/s]
+    void follow_lead_vehicle(double s, int current_lane, const vector<vector<double>>& sensor_fusion);
+
+    void adapt_target_lane_speed(double s, const vector<vector<double>>& sensor_fusion);
+
+    BehaviorState keep_lane(double s, const int current_lane, double current_speed,
+                            const vector<vector<double>>& sensor_fusion);
+
+    BehaviorState prepare_lane_change_left(double s, const int current_lane,
+                                           const vector<vector<double>>& sensor_fusion);
+
+    BehaviorState prepare_lane_change_right(double s, const int current_lane,
+                                            const vector<vector<double>>& sensor_fusion);
+
+    BehaviorState lane_change_left(double s, const int current_lane, const vector<vector<double>>& sensor_fusion);
+
+    BehaviorState lane_change_right(double s, const int current_lane, const vector<vector<double>>& sensor_fusion);
+
+    static string state_to_string(BehaviorState state);
+
+    double reference_speed_; // target speed [m/s]
+
+    BehaviorState current_state;
 };

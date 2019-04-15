@@ -16,46 +16,172 @@ using namespace std;
 HighwayDrivingBehavior::HighwayDrivingBehavior()
 {
     // our speed target is the maximum speed allowed on highways
-    target_speed = MAX_SPEED;
+    reference_speed_ = MAX_SPEED;
+
+    target_speed = 0.0;
+
+    target_lane = -1;
+
+    current_state = KeepLane;
 }
 
 HighwayDrivingBehavior::~HighwayDrivingBehavior()
 = default;
 
-DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const int current_lane,
-                                                         const double current_speed,
-                                                         const vector<vector<double>>& sensor_fusion)
+void HighwayDrivingBehavior::update(const double s, const int current_lane, const double current_speed,
+                                    const vector<vector<double>>& sensor_fusion)
+{
+    if (target_lane == -1)
+        target_lane = current_lane;
+
+    printf("%-22s: %s\n", "current state:", state_to_string(current_state).c_str());
+
+    switch (current_state)
+    {
+    case KeepLane:
+        {
+            current_state = keep_lane(s, current_lane, current_speed, sensor_fusion);
+            break;
+        }
+    case PrepareLaneChangeLeft:
+        {
+            current_state = prepare_lane_change_left(s, current_lane, sensor_fusion);
+            break;
+        }
+    case PrepareLaneChangeRight:
+        {
+            current_state = prepare_lane_change_right(s, current_lane, sensor_fusion);
+            break;
+        }
+    case LaneChangeLeft:
+        {
+            current_state = lane_change_left(s, current_lane, sensor_fusion);
+            break;
+        }
+    case LaneChangeRight:
+        {
+            current_state = lane_change_right(s, current_lane, sensor_fusion);
+            break;
+        }
+    default:
+        break;
+    }
+}
+
+HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::keep_lane(
+    const double s, const int current_lane, const double current_speed, const vector<vector<double>>& sensor_fusion)
+{
+    follow_lead_vehicle(s, current_lane, sensor_fusion);
+
+    // check if it's better to change the lane
+    const auto new_lane = get_best_lane(s, current_lane, current_speed, sensor_fusion);
+
+    if (new_lane < current_lane)
+    {
+        return PrepareLaneChangeLeft;
+    }
+
+    if (new_lane > current_lane)
+    {
+        return PrepareLaneChangeRight;
+    }
+
+    return KeepLane;
+}
+
+HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_change_left(
+    const double s, const int current_lane, const vector<vector<double>>& sensor_fusion)
+{
+    // check if change to the new lane is possible
+    const auto new_line = current_lane - 1;
+    auto new_vehicle_ahead = find_closest_vehicle(s, new_line, sensor_fusion, true);
+    auto new_vehicle_behind = find_closest_vehicle(s, new_line, sensor_fusion, false);
+
+    // check if there is enough room to change the lane
+    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
+    {
+        target_lane = new_line;
+        adapt_target_lane_speed(s, sensor_fusion);
+        return LaneChangeLeft;
+    }
+
+    follow_lead_vehicle(s, current_lane, sensor_fusion);
+    return PrepareLaneChangeLeft;
+}
+
+HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_change_right(
+    const double s, const int current_lane, const vector<vector<double>>& sensor_fusion)
+{
+    // check if change to the new lane is possible
+    const auto new_line = current_lane + 1;
+    auto new_vehicle_ahead = find_closest_vehicle(s, new_line, sensor_fusion, true);
+    auto new_vehicle_behind = find_closest_vehicle(s, new_line, sensor_fusion, false);
+
+    // check if there is enough room to change the lane
+    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
+    {
+        target_lane = new_line;
+        adapt_target_lane_speed(s, sensor_fusion);
+        return LaneChangeRight;
+    }
+
+    follow_lead_vehicle(s, current_lane, sensor_fusion);
+    return PrepareLaneChangeRight;
+}
+
+HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::lane_change_left(
+    const double s, const int current_lane, const vector<vector<double>>& sensor_fusion)
+{
+    if (current_lane == target_lane)
+    {
+        follow_lead_vehicle(s, current_lane, sensor_fusion);
+        return KeepLane;
+    }
+
+    adapt_target_lane_speed(s, sensor_fusion);
+    return LaneChangeLeft;
+}
+
+HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::lane_change_right(
+    const double s, const int current_lane, const vector<vector<double>>& sensor_fusion)
+{
+    if (current_lane == target_lane)
+    {
+        follow_lead_vehicle(s, current_lane, sensor_fusion);
+        return KeepLane;
+    }
+
+    adapt_target_lane_speed(s, sensor_fusion);
+    return LaneChangeRight;
+}
+
+void HighwayDrivingBehavior::follow_lead_vehicle(const double s, const int current_lane,
+                                                 const vector<vector<double>>& sensor_fusion)
 {
     // find leading vehicle on current lane
     const auto lead_vehicle = find_closest_vehicle(s, current_lane, sensor_fusion, true);
     const auto lead_vehicle_distance = lead_vehicle[0];
     const auto lead_vehicle_speed = lead_vehicle[1];
 
-    // check if it's better to change the lane
-    const auto new_lane = get_best_lane(s, current_lane, current_speed, sensor_fusion);
+    printf("%-22s: %4.2f m\n", "lead vehicle distance", lead_vehicle_distance);
+    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", lead_vehicle_speed,
+           SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed));
 
-    // check if change to the new lane is possible
-    auto new_vehicle_ahead = find_closest_vehicle(s, new_lane, sensor_fusion, true);
-    auto new_vehicle_behind = find_closest_vehicle(s, new_lane, sensor_fusion, false);
-
-    // check if there is enough room to change the lane
-    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
-    {
-        // it's not possible to change the lane => remain on current lane
-        printf("%-22s: %4.2f m\n", "lead vehicle distance", lead_vehicle_distance);
-        printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", lead_vehicle_speed,
-               SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed));
-
-        // ensure safety distance to the leading vehicle on the current lane
-        // adjust the speed to the speed of the leading vehicle on the current lane
-        if (lead_vehicle_distance < get_dynamic_safety_distance(lead_vehicle_speed))
-            return DrivingAction{current_lane, min(lead_vehicle_speed, target_speed)};
-
+    // ensure safety distance to the leading vehicle on the current lane
+    // adjust the speed to the speed of the leading vehicle on the current lane
+    if (lead_vehicle_distance < get_dynamic_safety_distance(lead_vehicle_speed))
+        target_speed = min(lead_vehicle_speed, reference_speed_);
+    else
         // drive with max speed if the distance to leading vehicle is big enough
-        return DrivingAction{current_lane, get_dynamic_speed_from_distance(lead_vehicle_distance)};
-    }
+        target_speed = get_dynamic_speed_from_distance(lead_vehicle_distance);
+}
 
-    // it's possible to change the lane => change to the new lane
+void HighwayDrivingBehavior::adapt_target_lane_speed(const double s, const vector<vector<double>>& sensor_fusion)
+{
+    // find vehicle ahaed and behind on target lane
+    auto new_vehicle_ahead = find_closest_vehicle(s, target_lane, sensor_fusion, true);
+    auto new_vehicle_behind = find_closest_vehicle(s, target_lane, sensor_fusion, false);
+
     printf("%-22s: %4.2f m\n", "lead vehicle distance", new_vehicle_ahead[0]);
     printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", new_vehicle_ahead[1],
            SpeedConverter::km_per_sec_to_miles_per_hour(new_vehicle_ahead[1]));
@@ -63,10 +189,10 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     // ensure safety distance to the leading vehicle on the new lane
     // adjust the speed to the speed of the leading vehicle on the new lane
     if (new_vehicle_ahead[0] < get_dynamic_safety_distance(new_vehicle_ahead[1]))
-        return DrivingAction{new_lane, min(new_vehicle_ahead[1], target_speed)};
-
-    // drive with max speed if the distance to leading vehicle is big enough
-    return DrivingAction{new_lane, get_dynamic_speed_from_distance(new_vehicle_ahead[0])};
+        target_speed = min(new_vehicle_ahead[1], reference_speed_);
+    else
+        // drive with max speed if the distance to leading vehicle is big enough
+        target_speed = get_dynamic_speed_from_distance(new_vehicle_ahead[0]);
 }
 
 vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, const int current_lane,
@@ -74,7 +200,7 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, cons
                                                             const bool forward)
 {
     double distance = 10000; // distance out of range
-    auto speed = target_speed; // use target speed if no vehicle in lane
+    auto speed = reference_speed_; // use target speed if no vehicle in lane
 
     // check vehicles in sensor range
     for (auto& vehicle : sensor_fusion)
@@ -123,7 +249,6 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int current_lane
     for (auto i = 0; i < 3; i++)
     {
         auto vehicle_ahead = find_closest_vehicle(s, i, sensor_fusion, true);
-
         auto vehicle_behind = find_closest_vehicle(s, i, sensor_fusion, false);
 
         if (vehicle_ahead[0] < 1000 && vehicle_ahead[0] >= MIN_LANE_CHANGE_DISTANCE_AHEAD)
@@ -141,14 +266,14 @@ int HighwayDrivingBehavior::get_best_lane(const double s, const int current_lane
             costs[i] += 1000; // vehicle near behind in other lane => not enough space for lane change
         }
 
-        if (i != current_lane && vehicle_behind[1] >= current_speed)
-        {
-            costs[i] += 100; // vehicle behind in other lane drives faster => risk for lane change
-        }
+        //if (i != current_lane && vehicle_behind[1] >= current_speed)
+        //{
+        //    costs[i] += 100; // vehicle behind in other lane drives faster => risk for lane change
+        //}
 
         if (vehicle_ahead_in_current_lane[1] < vehicle_ahead[1])
         {
-            costs[i] += 100; // current lane speed slower than other lane speed
+            costs[i] += 200; // current lane speed slower than other lane speed
         }
 
         if (i != current_lane)
@@ -184,5 +309,23 @@ double HighwayDrivingBehavior::get_dynamic_speed_from_distance(const double lead
 {
     // rule of thumb: velocity [km/h] * 0,5 <=> safety distance [m]
     // distance [m/s] * 2 <=> velocity [km/h] => velocity [km/h] / 3.6 = velocity [m/s] => factor = 2 / 3.6 = 0.555
-    return min(lead_vehicle_distance * 0.555, target_speed); // ensure max speed
+    return min(lead_vehicle_distance * 0.555, reference_speed_); // ensure max speed
+}
+
+string HighwayDrivingBehavior::state_to_string(const BehaviorState state)
+{
+    switch (state)
+    {
+    case KeepLane:
+        return "Keep Lane";
+    case PrepareLaneChangeLeft:
+        return "Prepare Lane Change Left";
+    case PrepareLaneChangeRight:
+        return "Prepare Lane Change Right";
+    case LaneChangeLeft:
+        return "Lane Change Left";
+    case LaneChangeRight:
+        return "Lane Change Right";
+    }
+    return {};
 }

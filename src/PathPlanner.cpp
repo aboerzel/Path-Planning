@@ -83,14 +83,13 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
     printf("%-22s: %d\n", "current lane", current_lane);
     printf("%-22s: %4.2f\n", "current d", frenet_vec[1]);
 
-    auto driving_action = highway_driving_behavior.get_driving_action(frenet_vec[0], current_lane,
-                                                                      SpeedConverter::miles_per_hour_to_km_per_sec(
-                                                                          car_speed), sensor_fusion);
-    auto target_d = LaneConverter::lane_to_d(driving_action.lane);
+    highway_driving_behavior.update(frenet_vec[0], current_lane,
+                                    SpeedConverter::miles_per_hour_to_km_per_sec(car_speed), sensor_fusion);
+    auto target_d = LaneConverter::lane_to_d(highway_driving_behavior.target_lane);
 
-    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "target speed", driving_action.speed,
-           SpeedConverter::km_per_sec_to_miles_per_hour(driving_action.speed));
-    printf("%-22s: %d\n", "target lane", driving_action.lane);
+    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "target speed", highway_driving_behavior.target_speed,
+           SpeedConverter::km_per_sec_to_miles_per_hour(highway_driving_behavior.target_speed));
+    printf("%-22s: %d\n", "target lane", highway_driving_behavior.target_lane);
     printf("%-22s: %4.2f\n", "target d", target_d);
 
     // add new waypoints to following the desired lane
@@ -120,11 +119,11 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
     for (auto i = 0; i < PATH_LENGTH - prev_path_size; i++)
     {
         // accelerate / decelerate; ensure target speed
-        if (ref_speed < driving_action.speed - V_DIFF)
+        if (ref_speed < highway_driving_behavior.target_speed - V_DIFF)
         {
             ref_speed += V_DIFF;
         }
-        else if (ref_speed > driving_action.speed + V_DIFF)
+        else if (ref_speed > highway_driving_behavior.target_speed + V_DIFF)
         {
             ref_speed -= V_DIFF;
         }
