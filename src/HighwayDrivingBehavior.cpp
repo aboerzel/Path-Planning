@@ -10,7 +10,7 @@ using namespace std;
 // parameter to adjust driving behavior
 #define MAX_SPEED 22.12848                      // maximum speed in [m/sec] => 49.5 MPS
 #define MIN_LANE_CHANGE_DISTANCE_AHEAD 30.0     // minimum distance [m] to the vehicle ahead on the target lane, needed for lane change
-#define MIN_LANE_CHANGE_DISTANCE_BEHIND 40.0    // minimum distance [m] to the vehicle behind on the target lane, needed for lane change
+#define MIN_LANE_CHANGE_DISTANCE_BEHIND 30.0    // minimum distance [m] to the vehicle behind on the target lane, needed for lane change
 #define MIN_DISTANCE 5.0                        // minimum distance [m] to the vehicle ahead regardless of the speed
 
 HighwayDrivingBehavior::HighwayDrivingBehavior()
@@ -23,6 +23,7 @@ HighwayDrivingBehavior::~HighwayDrivingBehavior()
 = default;
 
 DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const int current_lane,
+                                                         const double current_speed,
                                                          const vector<vector<double>>& sensor_fusion)
 {
     // find leading vehicle on current lane
@@ -31,7 +32,7 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     const auto lead_vehicle_speed = lead_vehicle[1];
 
     // check if it's better to change the lane
-    const auto new_lane = get_best_lane(s, current_lane, sensor_fusion);
+    const auto new_lane = get_best_lane(s, current_lane, current_speed, sensor_fusion);
 
     // check if change to the new lane is possible
     auto new_vehicle_ahead = find_closest_vehicle(s, new_lane, sensor_fusion, true);
@@ -40,8 +41,6 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     // check if there is enough room to change the lane
     if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
     {
-        avg_scores = { 0, 0, 0 }; // reset average score
-
         // it's not possible to change the lane => remain on current lane
         printf("%-22s: %4.2f m\n", "lead vehicle distance", lead_vehicle_distance);
         printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", lead_vehicle_speed,
@@ -70,7 +69,7 @@ DrivingAction HighwayDrivingBehavior::get_driving_action(const double s, const i
     return DrivingAction{new_lane, get_dynamic_speed_from_distance(new_vehicle_ahead[0])};
 }
 
-vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, const int lane,
+vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, const int current_lane,
                                                             const vector<vector<double>>& sensor_fusion,
                                                             const bool forward)
 {
@@ -83,7 +82,7 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, cons
         const auto vehicle_lane = LaneConverter::d_to_lane(vehicle[6]);
 
         // check only vehicles on the same lane
-        if (vehicle_lane != lane)
+        if (vehicle_lane != current_lane)
             continue;
 
         const auto vehicle_s = vehicle[5];
@@ -114,57 +113,64 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(const double s, cons
     return {max(1.0, distance), speed};
 }
 
-int HighwayDrivingBehavior::get_best_lane(const double s, const int lane, const vector<vector<double>>& sensor_fusion)
+int HighwayDrivingBehavior::get_best_lane(const double s, const int current_lane, const double current_speed,
+                                          const vector<vector<double>>& sensor_fusion)
 {
-    vector<double> scores = {0, 0, 0};
+    vector<double> costs = {0, 0, 0};
 
-    auto vehicle_ahead_in_lane = find_closest_vehicle(s, lane, sensor_fusion, true);
+    auto vehicle_ahead_in_current_lane = find_closest_vehicle(s, current_lane, sensor_fusion, true);
 
     for (auto i = 0; i < 3; i++)
     {
         auto vehicle_ahead = find_closest_vehicle(s, i, sensor_fusion, true);
+
         auto vehicle_behind = find_closest_vehicle(s, i, sensor_fusion, false);
 
-        if (i == lane && vehicle_ahead[0] > 1000)
+        if (vehicle_ahead[0] < 1000 && vehicle_ahead[0] >= MIN_LANE_CHANGE_DISTANCE_AHEAD)
         {
-            scores[i] += 50; // no vehicle ahead in current lane => keep current lane
-        }
-        
-        if (i != lane && vehicle_ahead[0] > 1000 && vehicle_behind[0] > MIN_LANE_CHANGE_DISTANCE_BEHIND)
-        {
-            scores[i] += 30; // wide open lane => change to that lane
+            costs[i] += 25; // vehicle far ahead 
         }
 
-        if (vehicle_ahead[1] > vehicle_ahead_in_lane[1])
+        if (vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD)
         {
-            scores[i] += 10; // faster speed ahead than current lane speed
+            costs[i] += 500; // vehicle near ahead 
         }
 
-        if (i != lane && vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD || vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
+        if (i != current_lane && vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE_BEHIND)
         {
-            scores[i] = 0; // gap to small for lane change => don't change to this lane
+            costs[i] += 1000; // vehicle near behind in other lane => not enough space for lane change
         }
 
-        // Use the average of the last 10 scores to avoid massive changing driving actions
-        avg_scores[i] = (avg_scores[i] * 10) - avg_scores[i];
-        avg_scores[i] += scores[i];
-        avg_scores[i] /= 10;
+        if (i != current_lane && vehicle_behind[1] >= current_speed)
+        {
+            costs[i] += 100; // vehicle behind in other lane drives faster => risk for lane change
+        }
+
+        if (vehicle_ahead_in_current_lane[1] < vehicle_ahead[1])
+        {
+            costs[i] += 100; // current lane speed slower than other lane speed
+        }
+
+        if (i != current_lane)
+        {
+            costs[i] += 50; // keep current lane if score of other lane is not better
+        }
     }
 
-    if (lane == 0)
+    if (current_lane == 0)
     {
         // best score for lanes 0 and 1
-        return max_element(avg_scores.begin(), avg_scores.end() - 1) - avg_scores.begin();
+        return min_element(costs.begin(), costs.end() - 1) - costs.begin();
     }
 
-    if (lane == 1)
+    if (current_lane == 1)
     {
         // best score for lanes 0 to 2
-        return max_element(avg_scores.begin(), avg_scores.end()) - avg_scores.begin();
+        return min_element(costs.begin(), costs.end()) - costs.begin();
     }
 
     // best score for lanes 1 and 2
-    return max_element(avg_scores.begin() + 1, avg_scores.end()) - avg_scores.begin();
+    return min_element(costs.begin() + 1, costs.end()) - costs.begin();
 }
 
 double HighwayDrivingBehavior::get_dynamic_safety_distance(const double lead_vehicle_speed)

@@ -16,7 +16,7 @@
 
 PathPlanner::PathPlanner()
 {
-    ref_speed = 0.0;    // reference speed [m/s]
+    ref_speed = 0.0; // reference speed [m/s]
 }
 
 PathPlanner::~PathPlanner()
@@ -78,14 +78,18 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
 
     auto current_lane = LaneConverter::d_to_lane(frenet_vec[1]);
 
-    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "current speed", ref_speed, SpeedConverter::km_per_sec_to_miles_per_hour(ref_speed));
+    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "current speed", ref_speed,
+           SpeedConverter::km_per_sec_to_miles_per_hour(ref_speed));
     printf("%-22s: %d\n", "current lane", current_lane);
     printf("%-22s: %4.2f\n", "current d", frenet_vec[1]);
 
-    auto driving_action = highway_driving_behavior.get_driving_action(frenet_vec[0], current_lane, sensor_fusion);
+    auto driving_action = highway_driving_behavior.get_driving_action(frenet_vec[0], current_lane,
+                                                                      SpeedConverter::miles_per_hour_to_km_per_sec(
+                                                                          car_speed), sensor_fusion);
     auto target_d = LaneConverter::lane_to_d(driving_action.lane);
 
-    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "target speed", driving_action.speed, SpeedConverter::km_per_sec_to_miles_per_hour(driving_action.speed));
+    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "target speed", driving_action.speed,
+           SpeedConverter::km_per_sec_to_miles_per_hour(driving_action.speed));
     printf("%-22s: %d\n", "target lane", driving_action.lane);
     printf("%-22s: %4.2f\n", "target d", target_d);
 
@@ -126,7 +130,7 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
         }
 
         // calculate points along new path
-        auto delta_s = ref_speed * DT;  // distance per time interval DT [m] 
+        auto delta_s = ref_speed * DT; // distance per time interval DT [m] 
         auto x = x_offset + target_x * delta_s / target_dist;
         auto y = spline(x);
 
