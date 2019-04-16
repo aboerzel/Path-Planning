@@ -11,8 +11,6 @@
 #define WAYPOINT_COUNT 3            // number of new waypoints to calculate
 #define DT .02                      // time interval in seconds in which the path planning is called
 #define PATH_LENGTH 50              // number of waypoints of the path
-#define MAX_ACCEL (9.0)             // max acceleration [m/s²] => 10 m/s² * 0.90 => 9.0 m/s²
-#define V_DIFF (MAX_ACCEL * DT)     // speed difference per time interval DT [m/s]
 
 PathPlanner::PathPlanner()
 {
@@ -85,6 +83,7 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
 
     highway_driving_behavior.update(frenet_vec[0], current_lane,
                                     SpeedConverter::miles_per_hour_to_km_per_sec(car_speed), sensor_fusion);
+
     auto target_d = LaneConverter::lane_to_d(highway_driving_behavior.target_lane);
 
     printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "target speed", highway_driving_behavior.target_speed,
@@ -113,19 +112,20 @@ vector<Point> PathPlanner::calculate_path(const vector<double>& previous_path_x,
     auto target_y = spline(target_x);
     auto target_dist = sqrt(pow(target_x, 2) + pow(target_y, 2));
 
-    double x_offset = 0;
+    auto x_offset = 0.0;
+    auto speed_diff = highway_driving_behavior.target_accel * DT; // speed difference per time interval DT [m/s]
 
     // create new path points and add them to the new path
     for (auto i = 0; i < PATH_LENGTH - prev_path_size; i++)
     {
         // accelerate / decelerate; ensure target speed
-        if (ref_speed < highway_driving_behavior.target_speed - V_DIFF)
+        if (ref_speed < highway_driving_behavior.target_speed - speed_diff)
         {
-            ref_speed += V_DIFF;
+            ref_speed += speed_diff;
         }
-        else if (ref_speed > highway_driving_behavior.target_speed + V_DIFF)
+        else if (ref_speed > highway_driving_behavior.target_speed + speed_diff)
         {
-            ref_speed -= V_DIFF;
+            ref_speed -= speed_diff;
         }
 
         // calculate points along new path
