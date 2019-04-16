@@ -20,20 +20,23 @@ TrajectoryPlanner::TrajectoryPlanner()
 TrajectoryPlanner::~TrajectoryPlanner()
 = default;
 
-vector<Point> TrajectoryPlanner::calculate_path(const vector<double>& previous_path_x, const vector<double>& previous_path_y,
-                                          const vector<double>& map_waypoints_s, const vector<double>& map_waypoints_x,
-                                          const vector<double>& map_waypoints_y,
-                                          const vector<vector<double>>& sensor_fusion,
-                                          double car_x, double car_y, double car_yaw, double car_speed, double car_s)
+vector<Point> TrajectoryPlanner::calculate_trajectory(const vector<double>& previous_path_x,
+                                                      const vector<double>& previous_path_y,
+                                                      const vector<double>& map_waypoints_s,
+                                                      const vector<double>& map_waypoints_x,
+                                                      const vector<double>& map_waypoints_y,
+                                                      const vector<vector<double>>& sensor_fusion,
+                                                      double car_x, double car_y, double car_yaw, double car_speed,
+                                                      double car_s)
 {
-    vector<Point> new_path;
+    vector<Point> trajectory;
 
     int prev_path_size = previous_path_x.size();
 
     // start with previous path
     for (auto i = 0; i < prev_path_size; i++)
     {
-        new_path.emplace_back(previous_path_x[i], previous_path_y[i]);
+        trajectory.emplace_back(previous_path_x[i], previous_path_y[i]);
     }
 
     double ref_x;
@@ -138,8 +141,8 @@ vector<Point> TrajectoryPlanner::calculate_path(const vector<double>& previous_p
         // convert back to map coordinates
         auto p = PointConverter::vehicle_to_map_coordinates(Point(x, y), Point(ref_x, ref_y), ref_yaw);
 
-        new_path.push_back(p);
+        trajectory.push_back(p);
     }
 
-    return new_path;
+    return trajectory;
 }

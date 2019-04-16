@@ -6,13 +6,13 @@
 #include "Eigen-3.3/Eigen/Core"
 #include "helpers.h"
 #include "json.hpp"
-#include "PathPlanner.h"
+#include "TrajectoryPlanner.h"
 
 // for convenience
 using nlohmann::json;
 using namespace std;
 
-PathPlanner path_planner;
+TrajectoryPlanner trajectory_planner;
 
 int main()
 {
@@ -95,14 +95,14 @@ int main()
 
                         clear_console(); // only for better readability of the console output
 
-                        auto new_path = path_planner.calculate_path(previous_path_x, previous_path_y, 
-                                                                    map_waypoints_s, map_waypoints_x, map_waypoints_y, 
-                                                                    sensor_fusion, car_x, car_y, car_yaw, car_speed, car_s);
+                        auto trajectory = trajectory_planner.calculate_trajectory(
+                            previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
+                            sensor_fusion, car_x, car_y, car_yaw, car_speed, car_s);
 
                         json msgJson;
-                        msgJson["next_x"] = get_x_values(new_path);
-                        msgJson["next_y"] = get_y_values(new_path);
-                        
+                        msgJson["next_x"] = get_x_values(trajectory);
+                        msgJson["next_y"] = get_y_values(trajectory);
+
                         // ********************* END PROJECT CODE **********************
 
                         auto msg = "42[\"control\"," + msgJson.dump() + "]";

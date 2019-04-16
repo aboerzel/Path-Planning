@@ -13,7 +13,7 @@ public:
     ~TrajectoryPlanner();
 
     /**
-     * Calculates the next path from the previous path, the current vehicle position as well as the waypoints and sensor fusion data.
+     * Calculates the next trajectory from the previous path, the current vehicle position as well as the waypoints and sensor fusion data.
      * @param previous_path_x X coordinates of the previous path (map coordinate system)
      * @param previous_path_y Y coordinates of the previous path (map coordinate system)
      * @param map_waypoints_s Frenet s positions of map waypoints
@@ -25,13 +25,13 @@ public:
      * @param car_yaw Yaw angle of the vehicle (map coordinate system)
      * @param car_speed Current vehicle speed [mph]
      * @param car_s Current Frenet s position of the vehicle
-     * @return Next path the vehicle should drive
+     * @return Next trajectory the vehicle should drive
      */
-    vector<Point> calculate_path(const vector<double>& previous_path_x, const vector<double>& previous_path_y,
-                                 const vector<double>& map_waypoints_s, const vector<double>& map_waypoints_x,
-                                 const vector<double>& map_waypoints_y,
-                                 const vector<vector<double>>& sensor_fusion, 
-                                 double car_x, double car_y, double car_yaw, double car_speed, double car_s);
+    vector<Point> calculate_trajectory(const vector<double>& previous_path_x, const vector<double>& previous_path_y,
+                                       const vector<double>& map_waypoints_s, const vector<double>& map_waypoints_x,
+                                       const vector<double>& map_waypoints_y,
+                                       const vector<vector<double>>& sensor_fusion,
+                                       double car_x, double car_y, double car_yaw, double car_speed, double car_s);
 
 private:
 
