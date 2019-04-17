@@ -5,11 +5,11 @@
 #include "PointConverter.h"
 #include "spline.h"
 #include "SpeedConverter.h"
+#include "GlobalSettings.h"
 
 // parameter to adjust path planning
 #define WAYPOINT_DISTANCE 60.0      // distance between the waypoints of the calculated path
 #define WAYPOINT_COUNT 3            // number of new waypoints to calculate
-#define DT .02                      // time interval in seconds in which the path planning is called
 #define PATH_LENGTH 50              // number of waypoints of the path
 
 TrajectoryPlanner::TrajectoryPlanner()
@@ -20,14 +20,14 @@ TrajectoryPlanner::TrajectoryPlanner()
 TrajectoryPlanner::~TrajectoryPlanner()
 = default;
 
-vector<Point> TrajectoryPlanner::calculate_trajectory(const vector<double>& previous_path_x,
-                                                      const vector<double>& previous_path_y,
-                                                      const vector<double>& map_waypoints_s,
-                                                      const vector<double>& map_waypoints_x,
-                                                      const vector<double>& map_waypoints_y,
-                                                      const vector<vector<double>>& sensor_fusion,
-                                                      double car_x, double car_y, double car_yaw, double car_speed,
-                                                      double car_s)
+vector<Point> TrajectoryPlanner::generate_trajectory(const vector<double>& previous_path_x,
+                                                     const vector<double>& previous_path_y,
+                                                     const vector<double>& map_waypoints_s,
+                                                     const vector<double>& map_waypoints_x,
+                                                     const vector<double>& map_waypoints_y,
+                                                     const vector<vector<double>>& sensor_fusion,
+                                                     double car_x, double car_y, double car_yaw, double car_speed,
+                                                     double car_s)
 {
     vector<Point> trajectory;
 
@@ -84,8 +84,7 @@ vector<Point> TrajectoryPlanner::calculate_trajectory(const vector<double>& prev
     printf("%-22s: %d\n", "current lane", current_lane);
     printf("%-22s: %4.2f\n", "current d", frenet_vec[1]);
 
-    highway_driving_behavior.update(frenet_vec[0], current_lane,
-                                    SpeedConverter::miles_per_hour_to_km_per_sec(car_speed), sensor_fusion);
+    highway_driving_behavior.update(car_s, current_lane, sensor_fusion);
 
     auto target_d = LaneConverter::lane_to_d(highway_driving_behavior.target_lane);
 

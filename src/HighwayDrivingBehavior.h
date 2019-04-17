@@ -17,12 +17,11 @@ public:
 
     /**
      * Updates driving action (target lane, speed and acceleration) considering the traffic rules and other vehicles
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param current_lane Lane in which the vehicle is currently located
-     * @param current_speed Current vehicle speed [m/s]
      * @param sensor_fusion Sensor data regarding other vehicles
      */
-    void update(double s, int current_lane, double current_speed, const vector<vector<double>>& sensor_fusion);
+    void update(double current_s, int current_lane, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Target speed [m/s]
@@ -48,102 +47,95 @@ private:
     /**
      * Keeps the vehicle in the current lane at a safe distance from the vehicle ahead.
      * Check if a lane change makes sense.
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param current_lane Lane in which the vehicle is currently located
-     * @param current_speed Current vehicle speed [m/s]
      * @param sensor_fusion Sensor data regarding other vehicles
      * @return New behaviour state
      */
-    BehaviorState keep_lane(double s, int current_lane, double current_speed,
-                            const vector<vector<double>>& sensor_fusion);
+    BehaviorState keep_lane(double current_s, int current_lane, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Waits for a gap for the upcoming lane change to the left lane
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param current_lane Lane in which the vehicle is currently located
-     * @param current_speed
      * @param sensor_fusion Sensor data regarding other vehicles
      * @return New behaviour state
      */
-    BehaviorState prepare_lane_change_left(double s, int current_lane, double current_speed,
+    BehaviorState prepare_lane_change_left(double current_s, int current_lane,
                                            const vector<vector<double>>& sensor_fusion);
 
     /**
      * Waits for a gap for the upcoming lane change to the right lane
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param current_lane Lane in which the vehicle is currently located
-     * @param current_speed
      * @param sensor_fusion Sensor data regarding other vehicles
      * @return New behaviour state
      */
-    BehaviorState prepare_lane_change_right(double s, int current_lane, double current_speed,
+    BehaviorState prepare_lane_change_right(double current_s, int current_lane,
                                             const vector<vector<double>>& sensor_fusion);
 
     /**
      * Moves to the left lane
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param current_lane Lane in which the vehicle is currently located
-     * @param current_speed
      * @param sensor_fusion Sensor data regarding other vehicles
      * @return New behaviour state
      */
-    BehaviorState lane_change_left(double s, int current_lane, double current_speed,
-                                   const vector<vector<double>>& sensor_fusion);
+    BehaviorState lane_change_left(double current_s, int current_lane, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Moves to the right lane
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param current_lane Lane in which the vehicle is currently located
-     * @param current_speed
      * @param sensor_fusion Sensor data regarding other vehicles
      * @return New behaviour state
      */
-    BehaviorState lane_change_right(double s, int current_lane, double current_speed,
-                                    const vector<vector<double>>& sensor_fusion);
+    BehaviorState lane_change_right(double current_s, int current_lane, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Checks whether a change to the specified lane can be carried out safely
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param lane Lane in which the vehicle is currently located
-     * @param current_speed
      * @param sensor_fusion Sensor data regarding other vehicles
      * @return bool value that indicates whether switching to the specified lane is safe
      */
-    bool is_lane_safe_for_change(double s, int lane, double current_speed,
-                                 const vector<vector<double>>& sensor_fusion);
+    bool is_lane_safe_for_change(double current_s, int lane, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Adjusts the vehicle speed to the speed of the specified lane
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param lane Lane in which the vehicle is currently located
-     * @param current_speed
      * @param sensor_fusion Sensor data regarding other vehicles
      */
-    void adapt_target_speed_to_lane_speed(double s, int lane, double current_speed,
-                                          const vector<vector<double>>& sensor_fusion);
+    void adapt_target_speed_to_lane_speed(double current_s, int lane, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Determines the distance and the speed of the closest vehicle in the specified lane and direction
-     * @param s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param current_lane Lane in which the vehicle is currently located
-     * @param current_speed
      * @param sensor_fusion Sensor data regarding other vehicles
      * @param forward Direction in, which is searched for vehicles (true = forward, false = backwards)
      * @return Distance [m] and speed [m/s] of the closest vehicle in the given direction
      */
-    vector<double> find_closest_vehicle(
-        double s, int current_lane, double current_speed, const vector<vector<double>>& sensor_fusion,
-        bool forward);
+    vector<double> find_closest_vehicle(double current_s, int current_lane, const vector<vector<double>>& sensor_fusion,
+                                        bool forward);
+
+    /**
+     * Calculates the average speed of all vehicles ahead in lane
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates 
+     * @param current_lane Lane in which the vehicle is currently located
+     * @param sensor_fusion Sensor data regarding other vehicles
+     * @return Average lane speed [m/s] and number of vehicles ahead in lane
+     */
+    vector<double> get_average_lane_speed(double current_s, int current_lane, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Determines the best lane considering the current traffic situation
-     * @param s The vehicle’s longitudinal position in frenet coordinates
-     * @param current_lane Lane in which the vehicle is currently located
-     * @param current_speed Current vehicle speed [m/s]
+     * @param current_s The vehicle’s longitudinal position in frenet coordinates
      * @param sensor_fusion Sensor data regarding other vehicles
      * @return Best lane Id
      */
-    int get_best_lane(double s, int current_lane, double current_speed, const vector<vector<double>>& sensor_fusion);
+    int get_best_lane(double current_s, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Calculates a safe distance to the leading vehicle given by the leading vehicle speed
@@ -172,5 +164,15 @@ private:
      * Current behavior state
      * Used for the finite state machine
      */
-    BehaviorState current_state;
+    BehaviorState current_state_;
+
+    /**
+     * Id of the preferred lane 
+     */
+    int preferred_lane_;
+
+    /**
+     * Duration of the current lane change preparation [s]
+     */
+    double prepare_lane_change_time_;
 };

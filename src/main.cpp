@@ -95,7 +95,7 @@ int main()
 
                         clear_console(); // only for better readability of the console output
 
-                        auto trajectory = trajectory_planner.calculate_trajectory(
+                        auto trajectory = trajectory_planner.generate_trajectory(
                             previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
                             sensor_fusion, car_x, car_y, car_yaw, car_speed, car_s);
 
