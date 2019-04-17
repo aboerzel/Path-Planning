@@ -42,6 +42,7 @@ void HighwayDrivingBehavior::update(const double current_s, const int current_la
     printf("%-22s: %s\n", "current state", state_to_string(current_state_).c_str());
     printf("%-22s: %d\n", "preferred lane", preferred_lane_);
     printf("%-22s: %4.2f s\n", "prep.l-change duration", prepare_lane_change_time_);
+    printf("%-22s: %4.2f s\n", "time since last l-chg.", duration_since_last_lane_change_);
 
     switch (current_state_)
     {
