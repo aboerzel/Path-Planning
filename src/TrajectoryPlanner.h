@@ -24,14 +24,15 @@ public:
      * @param car_y Y coordinate of the current vehicle position (map coordinate system)
      * @param car_yaw Yaw angle of the vehicle (map coordinate system)
      * @param car_speed Current vehicle speed [mph]
-     * @param car_s Current Frenet s position of the vehicle
+     * @param car_s Current Frenet longitudinal position of the vehicle
+     * @param car_d Current Frenet lateral position of the vehicle
      * @return Next trajectory the vehicle should drive
      */
     vector<Point> generate_trajectory(const vector<double>& previous_path_x, const vector<double>& previous_path_y,
                                       const vector<double>& map_waypoints_s, const vector<double>& map_waypoints_x,
                                       const vector<double>& map_waypoints_y,
                                       const vector<vector<double>>& sensor_fusion,
-                                      double car_x, double car_y, double car_yaw, double car_speed, double car_s);
+                                      double car_x, double car_y, double car_yaw, double car_speed, double car_s, double car_d);
 
 private:
 

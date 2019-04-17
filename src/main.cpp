@@ -97,7 +97,7 @@ int main()
 
                         auto trajectory = trajectory_planner.generate_trajectory(
                             previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x, map_waypoints_y,
-                            sensor_fusion, car_x, car_y, car_yaw, car_speed, car_s);
+                            sensor_fusion, car_x, car_y, car_yaw, car_speed, car_s, car_d);
 
                         json msgJson;
                         msgJson["next_x"] = get_x_values(trajectory);

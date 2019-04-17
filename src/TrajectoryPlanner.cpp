@@ -27,7 +27,7 @@ vector<Point> TrajectoryPlanner::generate_trajectory(const vector<double>& previ
                                                      const vector<double>& map_waypoints_y,
                                                      const vector<vector<double>>& sensor_fusion,
                                                      double car_x, double car_y, double car_yaw, double car_speed,
-                                                     double car_s)
+                                                     double car_s, double car_d)
 {
     vector<Point> trajectory;
 
@@ -74,15 +74,12 @@ vector<Point> TrajectoryPlanner::generate_trajectory(const vector<double>& previ
         path_points.emplace_back(ref_x, ref_y);
     }
 
-    // convert map waypoint from cartesian coordinates to frenet coordinates
-    auto frenet_vec = getFrenet(ref_x, ref_y, ref_yaw, map_waypoints_x, map_waypoints_y);
-
-    auto current_lane = LaneConverter::d_to_lane(frenet_vec[1]);
+    auto current_lane = LaneConverter::d_to_lane(car_d);
 
     printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "current speed", ref_speed,
            SpeedConverter::km_per_sec_to_miles_per_hour(ref_speed));
     printf("%-22s: %d\n", "current lane", current_lane);
-    printf("%-22s: %4.2f\n", "current d", frenet_vec[1]);
+    printf("%-22s: %4.2f\n", "current d", car_d);
 
     highway_driving_behavior.update(car_s, current_lane, sensor_fusion);
 
