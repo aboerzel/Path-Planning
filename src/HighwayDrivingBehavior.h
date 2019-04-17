@@ -175,4 +175,10 @@ private:
      * Duration of the current lane change preparation [s]
      */
     double prepare_lane_change_time_;
+
+    /**
+     * Duration since the last lane change [s]
+     * Used to prevent that a just completed lane change is immediately followed by a new lane change
+     */
+    double duration_since_last_lane_change_;
 };

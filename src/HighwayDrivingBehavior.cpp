@@ -17,6 +17,7 @@ using namespace std;
 #define MIN_LANE_CHANGE_DISTANCE_BEHIND 15.0    // minimum distance [m] to the vehicle behind on the target lane, needed for lane change
 #define MIN_DISTANCE 5.0                        // minimum distance [m] to the vehicle ahead regardless of the speed
 #define MAX_PREPARE_LANE_CHANGE_DURATION 10	    // maximum duration to prepare a lane change [s]
+#define MIN_WAIT_TIME_BETWEEN_LANE_CHANGES 3    // minimum wait time between two lane changes [s]
 
 HighwayDrivingBehavior::HighwayDrivingBehavior()
 {
@@ -27,6 +28,7 @@ HighwayDrivingBehavior::HighwayDrivingBehavior()
     target_lane = -1;
     preferred_lane_ = -1;
     prepare_lane_change_time_ = 0;
+    duration_since_last_lane_change_ = 0;
 
     current_state_ = KeepLane; // initial behavior state
 }
@@ -71,6 +73,8 @@ void HighwayDrivingBehavior::update(const double current_s, const int current_la
     default:
         throw std::range_error("Unexpected behavior state");
     }
+
+    duration_since_last_lane_change_ += DT;
 }
 
 HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::keep_lane(
@@ -81,17 +85,20 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::keep_lane(
 
     adapt_target_speed_to_lane_speed(current_s, target_lane, sensor_fusion);
 
-    // search for the best lane
-    preferred_lane_ = get_best_lane(current_s, sensor_fusion);
-
-    if (preferred_lane_ < target_lane)
+    if (duration_since_last_lane_change_ >= MIN_WAIT_TIME_BETWEEN_LANE_CHANGES)
     {
-        return PrepareLaneChangeLeft;
-    }
+        // search for the best lane
+        preferred_lane_ = get_best_lane(current_s, sensor_fusion);
 
-    if (preferred_lane_ > target_lane)
-    {
-        return PrepareLaneChangeRight;
+        if (preferred_lane_ < target_lane)
+        {
+            return PrepareLaneChangeLeft;
+        }
+
+        if (preferred_lane_ > target_lane)
+        {
+            return PrepareLaneChangeRight;
+        }
     }
 
     return KeepLane;
@@ -180,6 +187,7 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::lane_change_left(
 
     if (current_lane == target_lane)
     {
+        duration_since_last_lane_change_ = 0;
         return KeepLane;
     }
 
@@ -195,6 +203,7 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::lane_change_right(
 
     if (current_lane == target_lane)
     {
+        duration_since_last_lane_change_ = 0;
         return KeepLane;
     }
 
