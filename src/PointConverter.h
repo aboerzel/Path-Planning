@@ -15,7 +15,7 @@ public:
      * @param ref_yaw Current angle of the vehicle relative to the map's cornet system
      * @return Point p relative to the vehicle position
      */
-    static Point map_to_vehicle_coordinates(const Point& p, const Point& ref_p, const double ref_yaw);
+    static Point map_to_vehicle_coordinates(const Point& p, const Point& ref_p, double ref_yaw);
 
     /**
      * Converts a point relative from the vehicle position to a point on the map

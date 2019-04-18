@@ -1,23 +1,23 @@
 #pragma once
 
 /**
- * Converts between d position in frenet coordinates and lane id.
+ * Converts between Frenet lateral position and lane id.
  */
 class LaneConverter
 {
 public:
 
     /**
-     * Converts d position in frenet coordinates to lane id.
-     * @param d d position in frenet coordinates
+     * Converts Frenet lateral position to lane id.
+     * @param d Frenet lateral position
      * @return lane id
      */
     static int d_to_lane(double d);
 
     /**
-     * Converts lane id to d position in frenet coordinates.
+     * Converts lane id to Frenet lateral position.
      * @param lane lane id
-     * @return d position in frenet coordinates
+     * @return Frenet lateral position
      */
     static double lane_to_d(int lane);
 };
