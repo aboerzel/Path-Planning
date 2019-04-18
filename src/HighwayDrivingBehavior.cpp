@@ -13,8 +13,7 @@ using namespace std;
 // parameter to adjust driving behavior
 #define MAX_SPEED 22.12848                      // maximum speed in [m/sec] => 49.5 MPS
 #define MAX_ACCEL 9.0                           // max acceleration [m/s?] => 10 m/s? * 0.90 => 9.0 m/s?
-#define MIN_LANE_CHANGE_DISTANCE_AHEAD 20.0     // minimum distance [m] to the vehicle ahead on the target lane, needed for lane change
-#define MIN_LANE_CHANGE_DISTANCE_BEHIND 15.0    // minimum distance [m] to the vehicle behind on the target lane, needed for lane change
+#define MIN_LANE_CHANGE_DISTANCE 20.0           // minimum distance [m] to the vehicle ahead on the target lane, needed for lane change
 #define MIN_DISTANCE 5.0                        // minimum distance [m] to the vehicle ahead regardless of the speed
 #define MAX_PREPARE_LANE_CHANGE_DURATION 10	    // maximum duration to prepare a lane change [s]
 #define MIN_WAIT_TIME_BETWEEN_LANE_CHANGES 3    // minimum wait time between two lane changes [s]
@@ -119,16 +118,16 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_chang
         return LaneChangeLeft;
     }
 
+    // remain on current lane
+    adapt_target_speed_to_lane_speed(current_s, current_lane, sensor_fusion);
+
     // check min distance to leading vehicle on current lane
     const auto lead_vehicle = find_closest_vehicle(current_s, current_lane, sensor_fusion, true);
-    if (lead_vehicle[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD)
+    if (lead_vehicle[0] < MIN_LANE_CHANGE_DISTANCE)
     {
         // discard the overtaking maneuver
-        adapt_target_speed_to_lane_speed(current_s, current_lane, sensor_fusion);
         return KeepLane;
     }
-
-    adapt_target_speed_to_lane_speed(current_s, current_lane, sensor_fusion);
 
     // check max prepare lane change duration
     if (prepare_lane_change_time_ > MAX_PREPARE_LANE_CHANGE_DURATION)
@@ -156,16 +155,16 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_chang
         return LaneChangeRight;
     }
 
+    // remain on current lane
+    adapt_target_speed_to_lane_speed(current_s, current_lane, sensor_fusion);
+
     // check min distance to leading vehicle on current lane
     const auto vehicle_ahead = find_closest_vehicle(current_s, current_lane, sensor_fusion, true);
-    if (vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE_AHEAD)
+    if (vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE)
     {
         // discard the overtaking maneuver
-        adapt_target_speed_to_lane_speed(current_s, current_lane, sensor_fusion);
         return KeepLane;
     }
-
-    adapt_target_speed_to_lane_speed(current_s, current_lane, sensor_fusion);
 
     // check max prepare lane change duration
     if (prepare_lane_change_time_ > MAX_PREPARE_LANE_CHANGE_DURATION)
@@ -217,9 +216,20 @@ bool HighwayDrivingBehavior::is_lane_safe_for_change(
     auto new_vehicle_ahead = find_closest_vehicle(current_s, lane, sensor_fusion, true);
     auto new_vehicle_behind = find_closest_vehicle(current_s, lane, sensor_fusion, false);
 
-    // check if there is a safe gap for lane change
-    return new_vehicle_ahead[0] > MIN_LANE_CHANGE_DISTANCE_AHEAD && new_vehicle_behind[0] >
-        MIN_LANE_CHANGE_DISTANCE_BEHIND;
+    // gap between vehicle ahead and behind is to small
+    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE + 10 || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE)
+    {
+        return false;
+    }
+
+    // vehicle behind drives faster than the vehicle ahead
+    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE + 80 && new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE + 80)
+    {
+        if (new_vehicle_behind[1] > new_vehicle_ahead[1])
+            return false;
+    }
+
+    return true;
 }
 
 void HighwayDrivingBehavior::adapt_target_speed_to_lane_speed(
@@ -236,7 +246,7 @@ void HighwayDrivingBehavior::adapt_target_speed_to_lane_speed(
 
     // ensure safety distance to the leading vehicle on the current lane
     // adjust the speed to the speed of the leading vehicle on the current lane
-    if (lead_vehicle_distance < get_dynamic_safety_distance(lead_vehicle_speed))
+    if (lead_vehicle_distance < get_dynamic_safety_distance(lead_vehicle_speed) && lead_vehicle_distance > 15)
         target_speed = min(lead_vehicle_speed, reference_speed_);
     else
         // drive with reference speed if the distance to leading vehicle is big enough
@@ -265,7 +275,7 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(
         {
             // check vehicle ahead
             const auto vehicle_distance = vehicle_s - current_s;
-            if (vehicle_distance > 0.0 && vehicle_distance < distance)
+            if (vehicle_distance >= 0.0 && vehicle_distance < distance)
             {
                 distance = vehicle_distance;
                 speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
@@ -275,7 +285,7 @@ vector<double> HighwayDrivingBehavior::find_closest_vehicle(
         {
             // check vehicle behind
             const auto vehicle_distance = current_s - vehicle_s;
-            if (vehicle_distance >= 0.0 && vehicle_distance < distance)
+            if (vehicle_distance > 0.0 && vehicle_distance < distance)
             {
                 distance = vehicle_distance;
                 speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
