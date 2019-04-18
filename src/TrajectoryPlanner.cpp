@@ -81,7 +81,7 @@ vector<Point> TrajectoryPlanner::generate_trajectory(const vector<double>& previ
     printf("%-22s: %d\n", "current lane", current_lane);
     printf("%-22s: %4.2f\n", "current d", car_d);
 
-    highway_driving_behavior.update(car_s, current_lane, sensor_fusion);
+    highway_driving_behavior.update(car_s, current_lane, car_speed, sensor_fusion);
 
     auto target_d = LaneConverter::lane_to_d(highway_driving_behavior.target_lane);
 

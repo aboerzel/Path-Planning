@@ -35,7 +35,7 @@ HighwayDrivingBehavior::HighwayDrivingBehavior()
 HighwayDrivingBehavior::~HighwayDrivingBehavior()
 = default;
 
-void HighwayDrivingBehavior::update(const double current_s, const int current_lane,
+void HighwayDrivingBehavior::update(const double current_s, const int current_lane, const double current_speed,
                                     const vector<vector<double>>& sensor_fusion)
 {
     printf("%-22s: %s\n", "current state", state_to_string(current_state_).c_str());
@@ -52,12 +52,12 @@ void HighwayDrivingBehavior::update(const double current_s, const int current_la
         }
     case PrepareLaneChangeLeft:
         {
-            current_state_ = prepare_lane_change_left(current_s, current_lane, sensor_fusion);
+            current_state_ = prepare_lane_change_left(current_s, current_lane, current_speed, sensor_fusion);
             break;
         }
     case PrepareLaneChangeRight:
         {
-            current_state_ = prepare_lane_change_right(current_s, current_lane, sensor_fusion);
+            current_state_ = prepare_lane_change_right(current_s, current_lane, current_speed, sensor_fusion);
             break;
         }
     case LaneChangeLeft:
@@ -105,12 +105,13 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::keep_lane(
 }
 
 HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_change_left(
-    const double current_s, const int current_lane, const vector<vector<double>>& sensor_fusion)
+    const double current_s, const int current_lane, const double current_speed,
+    const vector<vector<double>>& sensor_fusion)
 {
     const auto left_lane = current_lane - 1;
 
     // check if left lane is safe for lane change
-    if (is_lane_safe_for_change(current_s, left_lane, sensor_fusion))
+    if (is_lane_safe_for_change(current_s, left_lane, current_speed, sensor_fusion))
     {
         // change lane
         target_lane = left_lane;
@@ -142,12 +143,13 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_chang
 }
 
 HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_change_right(
-    const double current_s, const int current_lane, const vector<vector<double>>& sensor_fusion)
+    const double current_s, const int current_lane, const double current_speed,
+    const vector<vector<double>>& sensor_fusion)
 {
     const auto right_lane = current_lane + 1;
 
     // check if right lane is a safe for lane change
-    if (is_lane_safe_for_change(current_s, right_lane, sensor_fusion))
+    if (is_lane_safe_for_change(current_s, right_lane, current_speed, sensor_fusion))
     {
         // change lane
         target_lane = right_lane;
@@ -211,22 +213,35 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::lane_change_right(
 }
 
 bool HighwayDrivingBehavior::is_lane_safe_for_change(
-    const double current_s, const int lane, const vector<vector<double>>& sensor_fusion)
+    const double current_s, const int lane, const double current_speed, const vector<vector<double>>& sensor_fusion)
 {
-    auto new_vehicle_ahead = find_closest_vehicle(current_s, lane, sensor_fusion, true);
-    auto new_vehicle_behind = find_closest_vehicle(current_s, lane, sensor_fusion, false);
-
-    // gap between vehicle ahead and behind is to small
-    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE + 10 || new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE)
+    // check vehicles in sensor range
+    for (auto& vehicle : sensor_fusion)
     {
-        return false;
-    }
+        const auto vehicle_lane = LaneConverter::d_to_lane(vehicle[6]);
 
-    // vehicle behind drives faster than the vehicle ahead
-    if (new_vehicle_ahead[0] < MIN_LANE_CHANGE_DISTANCE + 80 && new_vehicle_behind[0] < MIN_LANE_CHANGE_DISTANCE + 80)
-    {
-        if (new_vehicle_behind[1] > new_vehicle_ahead[1])
+        // check only vehicles on the same lane
+        if (vehicle_lane != lane)
+            continue;
+
+        const auto vehicle_s = vehicle[5];
+
+        // check vehicle distance
+        const auto vehicle_distance = abs(vehicle_s - current_s);
+
+        // vehicle too close 
+        if (vehicle_distance < MIN_LANE_CHANGE_DISTANCE + 10)
+        {
             return false;
+        }
+
+        const auto vehicle_speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
+        if (vehicle_distance < MIN_LANE_CHANGE_DISTANCE + 80)
+        {
+            // vehicle behind drives faster
+            if (vehicle_speed > current_speed)
+                return false;
+        }
     }
 
     return true;
