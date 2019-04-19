@@ -64,7 +64,7 @@ Calculates the optimal trajectory for the vehicle from the target lane, speed an
 ![](assets/trajectory-planning.png)
 (Source: Udacity Self Driving Car Engineer Nanodegree Program)
 
-### Implementation:
+### Model Documentation:
 
 #### Behavior Planning
 The behavior planning is implemented in [HighwayDrivingBehavior.cpp](src/HighwayDrivingBehavior.cpp)
