@@ -75,7 +75,7 @@ Decides on the basis of the current traffic situation about lane change, speed a
 The following requirements apply (see [Project Rubric](https://review.udacity.com/#!/rubrics/1971/view)):
 * Compliance with traffic regulations (maximum speed 50 MPS, safety distance, driving only in the designated lanes)
 * Avoid collisions with other road users at all costs
-* Consideration to driving comfort (maximum acceleration 10 m/s², max jerk 10 m/s³)
+* Consideration to driving comfort (max. acceleration 10 m/s², max. jerk 10 m/s³)
 * Driving at the maximum permissible speed, if possible.
 
 ##### Input:
