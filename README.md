@@ -57,10 +57,91 @@ Essentially, two main tasks have to be fulfilled:
 Model-based approach to depict human-like driving behavior. The driving behavior is responsible to decide from the current traffic situation on lane change, speed and acceleration, whereby traffic rules, safety and driving comfort are to be considered.
 ![](assets/behavior-planning.png)
 
-#### Trajectory Generation
+#### Trajectory Planning
 Calculates the optimal trajectory for the vehicle from the target lane, speed and acceleration delivered by behavior planning.
-![](assets/trajectory-generation.png)
+![](assets/trajectory-planning.png)
+(Source: Udacity Self Driving Car Engineer Nanodegree Program)
 
+###Implementation:
+
+#### Behavior Planning
+The behavior planning is implemented in [HighwayDrivingBehavior.cpp](src/HighwayDrivingBehavior.cpp)
+
+#####Responsibility:
+Decides on the basis of the current traffic situation about lane change, speed and acceleration. It should be driven at the maximum permissible speed, taking into account traffic rules, safety and driving comfort.
+
+The following requirements apply:
+* Compliance with traffic regulations (maximum speed 50 MPS, safety distance, driving only in the designated lanes)
+* Avoid collisions with other road users at all costs
+* Consideration to driving comfort (maximum acceleration 10 m/s², max jerk 10 m/s³)
+* Driving at the maximum permissible speed, if possible.
+
+#####Input:
+* Current reference speed [m/s] (here constant 22.18 m/s = 49.5 MPS)
+* Current vehicle position (Frenet)
+* Current traffic lane
+* Current positions of other vehicles (Frenet)
+
+#####Output:
+* Target speed [m/s]
+* Target acceleration [m/s²] (here constant 9.0 m/s²)
+* Target lane
+
+#####Method:
+The driving behavior is realized with a finite state machine. This starts in the state "Keep Lane". In this state, the vehicle follows the leading vehicle at a safe distance or at the maximum permitted speed when the distance to the leading vehicle is large enough. Furthermore, it is checked in this state, which lane is currently the cheapest. For this, costs are calculated for each of the 3 lanes and the lane with the lowest cost is selected. If another lane proves to be better, the lane change is prepared (Prepare Lane Chane Left/Right).
+
+Lane costs are calculated according to the following criteria:
+* Higher costs the more vehicles are ahead in the lane
+* Higher costs, the closer the distance to the vehicle in front is
+* Higher costs, the lower the average driving speed of the lane
+* Higher costs, the farther left the lane is (drive right preferred)
+
+The states "Prepare Lane Change Left/Right) are used to prepare the lane change. For this purpose, the speed of the vehicle is adapted to the speed of the new lane and waited for a gap in the new lane, which is large enough to make the lane change. If such a gap is found, the lane change is executed (Lane Change Left/Right). However, if the distance to the vehicle in front is too small or if there is no suitable gap within 6 seconds, the process is aborted and the current lane is maintained (Keep Lane).
+
+In the states "Lane Change Left/Right" the speed of the vehicle is adapted to the speed of the vehicle ahead of the new lane and changed to the new lane. When the new lane is reached, it is maintained (Keep Lane).
+
+A short wait delay of 3 seconds between lane changes ensures that the vehicle does not make any serpentine lines between lanes when changing to the previous lane immediately after reaching a lane.
+
+![](assets/behavior-states.png)
+(Source: Udacity Self Driving Car Engineer Nanodegree Program)
+
+The implementation uses the following behavioral states:
+
+|Behavior State           |Description|
+|-------------------------|-----------|
+|Keep Lane                |Keeps the vehicle in the current lane:<br><br> • Keeps safe distance to the vehicle ahead <br>• Decides which traffic lane is the preferred traffic lane (=> Prepare Lane Change Left/Right)|
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+|Prepare Lane Change Left |Prepares the change to the left lane:<br><br> • Adapts speed of the left lane<br> • Checks whether a safe change to the left lane possible<br> • Initiates change to the left lane, if possible (=> Lane Change Left)<br> • Aborted if the safety distance to the vehicle ahead is too low (=> Keep Lane)<br> • Aborted if the max. duration of 3 seconds is reached (=> Keep Lane)|
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+|Prepare Lane Change Right|Prepares the change to the right lane:<br><br> • Adapts speed of the right lane<br> • Checks whether a safe change to the right lane possible<br> • Initiates change to the right lane, if possible (=> Lane Change Right)<br> • Aborted if the safety distance to the vehicle ahead is too low (=> Keep Lane)<br> • Aborted if the max. duration of 3 seconds is reached (=> Keep Lane)|
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+|Lane Change Left         |Performs change to the left lane:<br><br> • Adopts speed of the left lane<br> • Ends when reaching the left lane (=> Keep Lane)|
+|------------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+|Lane Change Right        |Performs change to the right lane:<br><br> • Adopts speed of the right lane<br> • Ends when reaching the right lane (=> Keep Lane)|
+
+#### Trajectory Planning
+The trajectory planning is implemented in [TrajectoryPlanner.cpp](src/TrajectoryPlanner.cpp)
+
+#####Responsibility:
+Calculates a new path based on the last path, the planned route, the current vehicle position and velocity and the current positions of other road users.
+
+#####Input:
+* Points of the last path planning in the Cartesian coordinate system of the map
+* Waypoints of the planned route in the coordinate system of the map
+* Current positions of other vehicles (Frenet)
+* Current position and orientation (x, y, yaw) of the vehicle in the Cartesian coordinate system of the map
+* Current position of the vehicle (Frenet)
+* Current speed of the vehicle [m/s].
+
+#####Output:
+* New calculated path in Cartesian coordinate system of the map
+
+#####Method:
+Uses the HighwayDrivingBehavior to determine the current target -lane, -speed and -acceleration and calculates the next path points from it, to add to the last lane.
+
+For simplicity, the new lane points will be generated in the target lane in Frenet coordinates. These are first transformed into the Cartesian coordinate system of the map and then transferred to simplify the path calculation in the Cartesian coordinate system of the vehicle (translation + rotation). From the last two points of the previous lane and these new lane points, a spline curve is calculated that represents the smoothest possible transition from the old points to the new points. This ensures the smoothest possible movement when changing lanes.
+
+Using the calculated spline curve and the current target speed and acceleration, the new path points are now calculated and transformed back from the vehicle's coordinate system to the map's coordinate system.
 
 ## Prerequisites
 To compile this project the following programming environment is required:
