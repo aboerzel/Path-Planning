@@ -110,13 +110,9 @@ The implementation uses the following behavioral states:
 |Behavior State           |Description|
 |-------------------------|-----------|
 |Keep Lane                |Keeps the vehicle in the current lane:<br><br> • Keeps safe distance to the vehicle ahead <br>• Decides which traffic lane is the preferred traffic lane (=> Prepare Lane Change Left/Right)|
-|---------------------------------|-----------------------------------------------------------------------------------------------|
 |Prepare Lane Change Left |Prepares the change to the left lane:<br><br> • Adapts speed of the left lane<br> • Checks whether a safe change to the left lane possible<br> • Initiates change to the left lane, if possible (=> Lane Change Left)<br> • Aborted if the safety distance to the vehicle ahead is too low (=> Keep Lane)<br> • Aborted if the max. duration of 3 seconds is reached (=> Keep Lane)|
-|---------------------------------|-----------------------------------------------------------------------------------------------|
 |Prepare Lane Change Right|Prepares the change to the right lane:<br><br> • Adapts speed of the right lane<br> • Checks whether a safe change to the right lane possible<br> • Initiates change to the right lane, if possible (=> Lane Change Right)<br> • Aborted if the safety distance to the vehicle ahead is too low (=> Keep Lane)<br> • Aborted if the max. duration of 3 seconds is reached (=> Keep Lane)|
-|---------------------------------|-----------------------------------------------------------------------------------------------|
 |Lane Change Left         |Performs change to the left lane:<br><br> • Adopts speed of the left lane<br> • Ends when reaching the left lane (=> Keep Lane)|
-|---------------------------------|-----------------------------------------------------------------------------------------------|
 |Lane Change Right        |Performs change to the right lane:<br><br> • Adopts speed of the right lane<br> • Ends when reaching the right lane (=> Keep Lane)|
 
 #### Trajectory Planning
