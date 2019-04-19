@@ -38,10 +38,10 @@ HighwayDrivingBehavior::~HighwayDrivingBehavior()
 void HighwayDrivingBehavior::update(const double current_s, const int current_lane, const double current_speed,
                                     const vector<vector<double>>& sensor_fusion)
 {
-    printf("%-22s: %s\n", "current state", state_to_string(current_state_).c_str());
-    printf("%-22s: %d\n", "preferred lane", preferred_lane_);
-    printf("%-22s: %4.2f s\n", "prep.l-change duration", prepare_lane_change_time_);
-    printf("%-22s: %4.2f s\n", "time since last l-chg.", duration_since_last_lane_change_);
+    printf("%-32s: %s\n", "current state", state_to_string(current_state_).c_str());
+    printf("%-32s: %d\n", "preferred lane", preferred_lane_);
+    printf("%-32s: %4.2f s\n", "prepare lane change duration", prepare_lane_change_time_);
+    printf("%-32s: %4.2f s\n", "duration since last lane change", duration_since_last_lane_change_);
 
     switch (current_state_)
     {
@@ -74,7 +74,7 @@ void HighwayDrivingBehavior::update(const double current_s, const int current_la
         throw std::range_error("Unexpected behavior state");
     }
 
-    printf("%-22s: %s\n", "new state", state_to_string(current_state_).c_str());
+    printf("%-32s: %s\n", "new state", state_to_string(current_state_).c_str());
 
     duration_since_last_lane_change_ += DT;
 }
@@ -187,7 +187,7 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::lane_change_left(
 {
     prepare_lane_change_time_ = 0;
 
-    adapt_target_speed_to_lane_speed(current_s, current_lane, sensor_fusion);
+    adapt_target_speed_to_lane_speed(current_s, target_lane, sensor_fusion);
 
     if (current_lane == target_lane)
     {
@@ -271,9 +271,9 @@ void HighwayDrivingBehavior::adapt_target_speed_to_lane_speed(
     const auto lead_vehicle_distance = lead_vehicle[0];
     const auto lead_vehicle_speed = lead_vehicle[1];
 
-    printf("%-22s: %4.2f m\n", "lead vehicle distance", lead_vehicle_distance);
-    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "lead vehicle speed", lead_vehicle_speed,
-           SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed));
+    printf("%-32s: %4.2f m\n", ("lead vehicle distance [lane " + to_string(lane) + "]").c_str(), lead_vehicle_distance);
+    printf("%-32s: %4.2f m/s (%4.2f MPS)\n", ("lead vehicle speed    [lane " + to_string(lane) + "]").c_str(), lead_vehicle_speed,
+           SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed), lane);
 
     // ensure safety distance to the leading vehicle on the current lane
     // adjust the speed to the speed of the leading vehicle on the current lane

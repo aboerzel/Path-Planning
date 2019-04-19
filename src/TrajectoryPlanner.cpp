@@ -76,19 +76,19 @@ vector<Point> TrajectoryPlanner::generate_trajectory(const vector<double>& previ
 
     auto current_lane = LaneConverter::d_to_lane(car_d);
 
-    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "current speed", ref_speed,
+    printf("%-32s: %4.2f m/s (%4.2f MPS)\n", "current speed", ref_speed,
            SpeedConverter::km_per_sec_to_miles_per_hour(ref_speed));
-    printf("%-22s: %d\n", "current lane", current_lane);
-    printf("%-22s: %4.2f\n", "current d", car_d);
+    printf("%-32s: %d\n", "current lane", current_lane);
+    printf("%-32s: %4.2f\n", "current d", car_d);
 
     highway_driving_behavior.update(car_s, current_lane, car_speed, sensor_fusion);
 
     auto target_d = LaneConverter::lane_to_d(highway_driving_behavior.target_lane);
 
-    printf("%-22s: %4.2f m/s (%4.2f MPS)\n", "target speed", highway_driving_behavior.target_speed,
+    printf("%-32s: %4.2f m/s (%4.2f MPS)\n", "target speed", highway_driving_behavior.target_speed,
            SpeedConverter::km_per_sec_to_miles_per_hour(highway_driving_behavior.target_speed));
-    printf("%-22s: %d\n", "target lane", highway_driving_behavior.target_lane);
-    printf("%-22s: %4.2f\n", "target d", target_d);
+    printf("%-32s: %d\n", "target lane", highway_driving_behavior.target_lane);
+    printf("%-32s: %4.2f\n", "target d", target_d);
 
     // add new waypoints to following the desired lane
     for (auto i = 1; i <= WAYPOINT_COUNT; i++)
