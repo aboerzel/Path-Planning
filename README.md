@@ -55,7 +55,7 @@ Essentially, two main tasks have to be fulfilled:
 
 #### Behavior Planning
 Model-based approach to depict human-like driving behavior. The driving behavior is responsible to decide from the current traffic situation on lane change, speed and acceleration, whereby traffic rules, safety and driving comfort are to be considered.
-![](assets/behavior-planning.png)
+![](assets/behavior-demo.gif)
 
 #### Trajectory Planning
 Calculates the optimal trajectory for the vehicle from the target lane, speed and acceleration delivered by behavior planning.
@@ -188,4 +188,4 @@ Follow these instructions to test the project:
 
 The following video shows the vehicle driving one lap on the highway:
 
-[![](assets/intro.jpg)](https://youtu.be/C172tBVX1Ho)
+[![](assets/demo-video.jpg)](https://youtu.be/UJbwyKS844Q)
