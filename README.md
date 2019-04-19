@@ -88,7 +88,11 @@ The following requirements apply (see [Project Rubric](https://review.udacity.co
 * Target lane
 
 ##### Method:
-The driving behavior is realized with a finite state machine. This starts in the state "Keep Lane". In this state, the vehicle follows the leading vehicle at a safe distance or at the maximum permitted speed when the distance to the leading vehicle is large enough. Furthermore, it is checked in this state, which lane is currently the cheapest. For this, costs are calculated for each of the 3 lanes and the lane with the lowest cost is selected. If another lane proves to be better, the lane change is prepared (Prepare Lane Chane Left/Right).
+The driving behavior is realized with a finite state machine:
+![](assets/behavior-states.png)
+(Source: Udacity Self Driving Car Engineer Nanodegree Program)
+
+This starts in the state "Keep Lane". In this state, the vehicle follows the leading vehicle at a safe distance or at the maximum permitted speed when the distance to the leading vehicle is large enough. Furthermore, it is checked in this state, which lane is currently the cheapest. For this, costs are calculated for each of the 3 lanes and the lane with the lowest cost is selected. If another lane proves to be better, the lane change is prepared (Prepare Lane Chane Left/Right).
 
 Lane costs are calculated according to the following criteria:
 * Higher costs the more vehicles are ahead in the lane
@@ -96,14 +100,12 @@ Lane costs are calculated according to the following criteria:
 * Higher costs, the lower the average driving speed of the lane
 * Higher costs, the farther left the lane is (drive right preferred)
 
-The states "Prepare Lane Change Left/Right) are used to prepare the lane change. For this purpose, the speed of the vehicle is adapted to the speed of the new lane and waited for a gap in the new lane, which is large enough to make the lane change. If such a gap is found, the lane change is executed (Lane Change Left/Right). However, if the distance to the vehicle in front is too small or if there is no suitable gap within 6 seconds, the process is aborted and the current lane is maintained (Keep Lane).
+The states "Prepare Lane Change Left/Right" are used to prepare the lane change. For this purpose, the speed of the vehicle is adapted to the speed of the new lane and waited for a gap in the new lane, which is large enough to make the lane change. If such a gap is found, the lane change is executed (Lane Change Left/Right). However, if the distance to the vehicle in front is too small or if there is no suitable gap within 6 seconds, the process is aborted and the current lane is maintained (Keep Lane).
 
 In the states "Lane Change Left/Right" the speed of the vehicle is adapted to the speed of the vehicle ahead of the new lane and changed to the new lane. When the new lane is reached, it is maintained (Keep Lane).
 
 A short wait delay of 3 seconds between lane changes ensures that the vehicle does not make any serpentine lines between lanes when changing to the previous lane immediately after reaching a lane.
 
-![](assets/behavior-states.png)
-(Source: Udacity Self Driving Car Engineer Nanodegree Program)
 
 The implementation uses the following behavioral states:
 
@@ -133,7 +135,7 @@ Calculates a new path based on the last path, the planned route, the current veh
 * New calculated path in Cartesian coordinate system of the map
 
 ##### Method:
-Uses the HighwayDrivingBehavior to determine the current target -lane, -speed and -acceleration and calculates the next path points from it, to add to the last lane.
+Uses the [HighwayDrivingBehavior](src/HighwayDrivingBehavior.cpp) to determine the current target -lane, -speed and -acceleration and calculates the next path points from it. Then the last path will be extended by the new path points.
 
 For simplicity, the new lane points will be generated in the target lane in Frenet coordinates. These are first transformed into the Cartesian coordinate system of the map and then transferred to simplify the path calculation in the Cartesian coordinate system of the vehicle (translation + rotation). From the last two points of the previous lane and these new lane points, a spline curve is calculated that represents the smoothest possible transition from the old points to the new points. This ensures the smoothest possible movement when changing lanes.
 
@@ -184,11 +186,6 @@ Follow these instructions to test the project:
 2. Run the [Simulator](https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2) (Project 1: Path Planning) 
 3. Press the `SELECT` button.
 
-TODO...
-The car moves around on the given map and shows the real position. 
-The black circles are the known landmarks and the green lines are the sensor measurements that were taken from the current car position.
-The blue circle shows the car position estimated by the particle filter, this must move continuously with the car!
-
-The following video shows a test run:
+The following video shows the vehicle driving one lap on the highway:
 
 [![](assets/intro.jpg)](https://youtu.be/C172tBVX1Ho)
