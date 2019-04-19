@@ -50,7 +50,7 @@ Here is the data provided from the Simulator to the C++ Program
 
 2. There will be some latency between the simulator running and the path planner returning a path, with optimized code usually its not very long maybe just 1-3 time steps. During this delay the simulator will continue using points that it was last given, because of this its a good idea to store the last points you have used so you can have a smooth transition. previous_path_x, and previous_path_y can be helpful for this transition since they show the last points given to the simulator controller with the processed points already removed. You would either return a path that extends this previous path or make sure to create a new path that has a smooth transition with this last path.
 
-## Solution Description
+## Model Documentation
 Essentially, two main tasks have to be fulfilled:
 
 #### Behavior Planning
@@ -64,7 +64,7 @@ Calculates the optimal trajectory for the vehicle from the target lane, speed an
 ![](assets/trajectory-planning.png)
 (Source: Udacity Self Driving Car Engineer Nanodegree Program)
 
-### Model Documentation:
+### Implementation:
 
 #### Behavior Planning
 The behavior planning is implemented in [HighwayDrivingBehavior.cpp](src/HighwayDrivingBehavior.cpp)
