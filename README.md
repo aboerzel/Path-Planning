@@ -70,7 +70,7 @@ The behavior planning is implemented in [HighwayDrivingBehavior.cpp](src/Highway
 #####Responsibility:
 Decides on the basis of the current traffic situation about lane change, speed and acceleration. It should be driven at the maximum permissible speed, taking into account traffic rules, safety and driving comfort.
 
-The following requirements apply:
+The following requirements apply (see [Project Rubric](https://review.udacity.com/#!/rubrics/1971/view)):
 * Compliance with traffic regulations (maximum speed 50 MPS, safety distance, driving only in the designated lanes)
 * Avoid collisions with other road users at all costs
 * Consideration to driving comfort (maximum acceleration 10 m/s², max jerk 10 m/s³)
@@ -185,8 +185,8 @@ Follow these instructions to compile and run this project:
 Follow these instructions to test the project:
 
 1. Run the path planning project from the build subdirectory with command: `./path_planning`
-2. Run the [Simulator](https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2) and select `Project 3: Kidnapped Vehicle` 
-3. Press the `Start` button.
+2. Run the [Simulator](https://github.com/udacity/self-driving-car-sim/releases/tag/T3_v1.2) (Project 1: Path Planning) 
+3. Press the `SELECT` button.
 
 TODO...
 The car moves around on the given map and shows the real position. 
