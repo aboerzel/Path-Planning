@@ -15,7 +15,7 @@ using namespace std;
 #define MAX_ACCEL 9.0                           // max acceleration [m/s?] => 10 m/s? * 0.90 => 9.0 m/s?
 #define MIN_LANE_CHANGE_DISTANCE 20.0           // minimum distance [m] to the vehicle ahead on the target lane, needed for lane change
 #define MIN_DISTANCE 5.0                        // minimum distance [m] to the vehicle ahead regardless of the speed
-#define MAX_PREPARE_LANE_CHANGE_DURATION 10	    // maximum duration to prepare a lane change [s]
+#define MAX_PREPARE_LANE_CHANGE_DURATION 6	    // maximum duration to prepare a lane change [s]
 #define MIN_WAIT_TIME_BETWEEN_LANE_CHANGES 3    // minimum wait time between two lane changes [s]
 
 HighwayDrivingBehavior::HighwayDrivingBehavior()
@@ -73,6 +73,8 @@ void HighwayDrivingBehavior::update(const double current_s, const int current_la
     default:
         throw std::range_error("Unexpected behavior state");
     }
+
+    printf("%-22s: %s\n", "new state", state_to_string(current_state_).c_str());
 
     duration_since_last_lane_change_ += DT;
 }
@@ -220,24 +222,38 @@ bool HighwayDrivingBehavior::is_lane_safe_for_change(
     {
         const auto vehicle_lane = LaneConverter::d_to_lane(vehicle[6]);
 
-        // check only vehicles on the same lane
+        // check only vehicles on lane
         if (vehicle_lane != lane)
             continue;
 
         const auto vehicle_s = vehicle[5];
+        const auto vehicle_distance = vehicle_s - current_s;
 
-        // check vehicle distance
-        const auto vehicle_distance = abs(vehicle_s - current_s);
-
-        // vehicle too close 
-        if (vehicle_distance < MIN_LANE_CHANGE_DISTANCE + 10)
+        // check vehicle ahead
+        if (vehicle_distance >= 0 && vehicle_distance < MIN_LANE_CHANGE_DISTANCE + 20)
         {
-            return false;
+            // vehicle too close 
+            if (vehicle_distance < MIN_LANE_CHANGE_DISTANCE + 10)
+            {
+                return false;
+            }
+
+            const auto vehicle_speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
+            // vehicle ahead drives slower
+            if (vehicle_speed < current_speed)
+                return false;
         }
 
-        const auto vehicle_speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
-        if (vehicle_distance < MIN_LANE_CHANGE_DISTANCE + 80)
+        // check vehicle behind
+        if (vehicle_distance <= 0 && abs(vehicle_distance) < MIN_LANE_CHANGE_DISTANCE + 20)
         {
+            // vehicle too close 
+            if (abs(vehicle_distance) < MIN_LANE_CHANGE_DISTANCE)
+            {
+                return false;
+            }
+
+            const auto vehicle_speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
             // vehicle behind drives faster
             if (vehicle_speed > current_speed)
                 return false;
