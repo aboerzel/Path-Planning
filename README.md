@@ -55,10 +55,12 @@ Essentially, two main tasks have to be fulfilled:
 
 #### Behavior Planning
 Model-based approach to depict human-like driving behavior. The driving behavior is responsible to decide from the current traffic situation on lane change, speed and acceleration, whereby traffic rules, safety and driving comfort are to be considered.
+
 ![](assets/behavior-demo.gif)
 
 #### Trajectory Planning
 Calculates the optimal trajectory for the vehicle from the target lane, speed and acceleration delivered by behavior planning.
+
 ![](assets/trajectory-planning.png)
 (Source: Udacity Self Driving Car Engineer Nanodegree Program)
 
