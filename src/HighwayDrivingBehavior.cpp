@@ -12,8 +12,8 @@ using namespace std;
 
 // parameter to adjust driving behavior
 #define MAX_SPEED 22.12848                      // maximum speed in [m/sec] => 49.5 MPS
-#define MAX_ACCEL 9.0                           // max acceleration [m/s?] => 10 m/s? * 0.90 => 9.0 m/s?
-#define MIN_LANE_CHANGE_DISTANCE 20.0           // minimum distance [m] to the vehicle ahead on the target lane, needed for lane change
+#define MAX_ACCEL 8.4                           // max acceleration [m/s²]
+#define MIN_LANE_CHANGE_DISTANCE 25.0           // minimum distance [m] to the vehicle ahead on the target lane, needed for lane change
 #define MIN_DISTANCE 5.0                        // minimum distance [m] to the vehicle ahead regardless of the speed
 #define MAX_PREPARE_LANE_CHANGE_DURATION 6	    // maximum duration to prepare a lane change [s]
 #define MIN_WAIT_TIME_BETWEEN_LANE_CHANGES 3    // minimum wait time between two lane changes [s]
@@ -113,7 +113,7 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_chang
     const auto left_lane = current_lane - 1;
 
     // check if left lane is safe for lane change
-    if (is_lane_safe_for_change(current_s, left_lane, current_speed, sensor_fusion))
+    if (is_lane_safe_for_change(current_s, current_lane, left_lane, current_speed, sensor_fusion))
     {
         // change lane
         target_lane = left_lane;
@@ -151,7 +151,7 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::prepare_lane_chang
     const auto right_lane = current_lane + 1;
 
     // check if right lane is a safe for lane change
-    if (is_lane_safe_for_change(current_s, right_lane, current_speed, sensor_fusion))
+    if (is_lane_safe_for_change(current_s, current_lane, right_lane, current_speed, sensor_fusion))
     {
         // change lane
         target_lane = right_lane;
@@ -215,14 +215,24 @@ HighwayDrivingBehavior::BehaviorState HighwayDrivingBehavior::lane_change_right(
 }
 
 bool HighwayDrivingBehavior::is_lane_safe_for_change(
-    const double current_s, const int lane, const double current_speed, const vector<vector<double>>& sensor_fusion)
+    const double current_s, const int current_lane, const int lane, const double current_speed, const vector<vector<double>>& sensor_fusion)
 {
+    // check distance to leading vehicle on current lane
+    auto lead_vehicle = find_closest_vehicle(current_s, current_lane, sensor_fusion, true);
+    // leading vehicle on current lane to close
+    const auto min_distance = max(current_speed * 0.5, 15.0);
+    if (lead_vehicle[0] < min_distance)
+    {
+        printf("BLOCKING: Distance %4.2f m to vehicle ahead on lane %d < %4.2f m\n", lead_vehicle[0], current_lane, min_distance);
+        return false;
+    }
+
     // check vehicles in sensor range
     for (auto& vehicle : sensor_fusion)
     {
         const auto vehicle_lane = LaneConverter::d_to_lane(vehicle[6]);
-
-        // check only vehicles on lane
+     
+        // check only vehicles on target lane
         if (vehicle_lane != lane)
             continue;
 
@@ -235,28 +245,36 @@ bool HighwayDrivingBehavior::is_lane_safe_for_change(
             // vehicle too close 
             if (vehicle_distance < MIN_LANE_CHANGE_DISTANCE + 10)
             {
+                printf("BLOCKING: Distance %4.2f m to vehicle ahead on lane %d < %4.2f m\n", vehicle_distance, lane, MIN_LANE_CHANGE_DISTANCE + 10);
                 return false;
             }
 
             const auto vehicle_speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
             // vehicle ahead drives slower
             if (vehicle_speed < current_speed)
+            {
+                printf("BLOCKING: Speed %4.2f m/s of vehicle ahead on lane %d < current speed %4.2f m/s\n", vehicle_speed, lane, current_speed);
                 return false;
+            }         
         }
 
         // check vehicle behind
         if (vehicle_distance <= 0 && abs(vehicle_distance) < MIN_LANE_CHANGE_DISTANCE + 20)
         {
             // vehicle too close 
-            if (abs(vehicle_distance) < MIN_LANE_CHANGE_DISTANCE)
+            if (abs(vehicle_distance) < MIN_LANE_CHANGE_DISTANCE - 5)
             {
+                printf("BLOCKING: Distance %4.2f m to vehicle behind on lane %d < %4.2f m\n", vehicle_distance, lane, MIN_LANE_CHANGE_DISTANCE - 5);
                 return false;
             }
 
             const auto vehicle_speed = sqrt(pow(vehicle[3], 2) + pow(vehicle[4], 2));
             // vehicle behind drives faster
             if (vehicle_speed > current_speed)
+            {
+                printf("BLOCKING: Speed %4.2f m/s of vehicle ahead on lane %d < current speed %4.2f m/s\n", vehicle_speed, lane, current_speed);
                 return false;
+            }
         }
     }
 
@@ -273,7 +291,7 @@ void HighwayDrivingBehavior::adapt_target_speed_to_lane_speed(
 
     printf("%-32s: %4.2f m\n", ("lead vehicle distance [lane " + to_string(lane) + "]").c_str(), lead_vehicle_distance);
     printf("%-32s: %4.2f m/s (%4.2f MPS)\n", ("lead vehicle speed    [lane " + to_string(lane) + "]").c_str(), lead_vehicle_speed,
-           SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed), lane);
+           SpeedConverter::km_per_sec_to_miles_per_hour(lead_vehicle_speed));
 
     // ensure safety distance to the leading vehicle on the current lane
     // adjust the speed to the speed of the leading vehicle on the current lane

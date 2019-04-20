@@ -8,8 +8,8 @@
 #include "GlobalSettings.h"
 
 // parameter to adjust path planning
-#define WAYPOINT_DISTANCE 60.0      // distance between the waypoints of the calculated path
-#define WAYPOINT_COUNT 3            // number of new waypoints to calculate
+#define WAYPOINT_DISTANCE 48        // distance between the waypoints of the calculated path
+#define WAYPOINT_COUNT 4            // number of new waypoints to calculate
 #define PATH_LENGTH 50              // number of waypoints of the path
 
 TrajectoryPlanner::TrajectoryPlanner()

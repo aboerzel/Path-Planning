@@ -98,13 +98,14 @@ private:
     /**
      * Checks whether a change to the specified lane can be carried out safely
      * @param current_s The vehicle’s longitudinal position in frenet coordinates
+     * @param current_lane Lane in which the vehicle is currently located
      * @param lane Lane in which the vehicle is currently located
      * @param current_speed Current vehicle speed [m/s]
      * @param sensor_fusion Sensor data regarding other vehicles
      * @return bool value that indicates whether switching to the specified lane is safe
      */
-    bool is_lane_safe_for_change(double current_s, int lane, double current_speed,
-                                 const vector<vector<double>>& sensor_fusion);
+    bool is_lane_safe_for_change(double current_s, int current_lane, int lane,
+                                 double current_speed, const vector<vector<double>>& sensor_fusion);
 
     /**
      * Adjusts the vehicle speed to the speed of the specified lane
