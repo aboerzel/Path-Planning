@@ -86,7 +86,7 @@ The following requirements apply (see [Project Rubric](https://review.udacity.co
 
 ##### Output:
 * Target speed [m/s]
-* Target acceleration [m/s²] (here constant 9.0 m/s²)
+* Target acceleration [m/s²] (here constant 8.4 m/s²)
 * Target lane
 
 ##### Method:
@@ -96,7 +96,7 @@ The driving behavior is realized with a finite state machine:
 
 This starts in the state "Keep Lane". In this state, the vehicle follows the leading vehicle at a safe distance or at the maximum permitted speed when the distance to the leading vehicle is large enough. Furthermore, it is checked in this state, which lane is currently the cheapest. For this, costs are calculated for each of the 3 lanes and the lane with the lowest cost is selected. If another lane proves to be better, the lane change is prepared (Prepare Lane Chane Left/Right).
 
-Lane costs are calculated according to the following criteria:
+Lane costs are calculated according to the following rules:
 * Higher costs the more vehicles are ahead in the lane
 * Higher costs, the closer the distance to the vehicle in front is
 * Higher costs, the lower the average driving speed of the lane
