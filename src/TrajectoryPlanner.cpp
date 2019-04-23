@@ -8,9 +8,9 @@
 #include "GlobalSettings.h"
 
 // parameter to adjust path planning
-#define WAYPOINT_DISTANCE 48        // distance between the waypoints of the calculated path
-#define WAYPOINT_COUNT 4            // number of new waypoints to calculate
-#define PATH_LENGTH 50              // number of waypoints of the path
+#define WAYPOINT_DISTANCE 48    // distance between the waypoints of the calculated path
+#define WAYPOINT_COUNT 4        // number of new waypoints to calculate
+#define PATH_LENGTH 50          // number of waypoints of the path
 
 TrajectoryPlanner::TrajectoryPlanner()
 {
@@ -58,7 +58,7 @@ vector<Point> TrajectoryPlanner::generate_trajectory(const vector<double>& previ
         path_points.emplace_back(car_x, car_y);
 
         // initialize reference speed [m/s] with current car speed [MPS], to get a smooth velocity
-        ref_speed = SpeedConverter::miles_per_hour_to_km_per_sec(car_speed);
+        ref_speed = SpeedConverter::miles_per_hour_to_m_per_sec(car_speed);
     }
     else
     {
@@ -81,7 +81,7 @@ vector<Point> TrajectoryPlanner::generate_trajectory(const vector<double>& previ
     printf("%-32s: %d\n", "current lane", current_lane);
     printf("%-32s: %4.2f\n", "current d", car_d);
 
-    highway_driving_behavior.update(car_s, current_lane, car_speed, sensor_fusion);
+    highway_driving_behavior.update(car_s, current_lane, SpeedConverter::miles_per_hour_to_m_per_sec(car_speed), sensor_fusion);
 
     auto target_d = LaneConverter::lane_to_d(highway_driving_behavior.target_lane);
 
