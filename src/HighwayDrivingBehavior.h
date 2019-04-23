@@ -158,6 +158,16 @@ private:
      */
     double get_dynamic_speed_from_distance(double lead_vehicle_distance);
 
+    /**
+     * Calculates the minimum required distance based on the current speed and 
+     * acceleration/deceleration of two vehicles so that they do not collide in an emergency.
+     * @param v1 Speed of the vehicle 1 [m/s]
+     * @param a1 Acceleration/deceleration of the vehicle 1 [m/s²]
+     * @param v2 Speed of the vehicle 2 [m/s]
+     * @param a2 Acceleration/deceleration of the vehicle 2 [m/s²]
+     * @return Minimum safety distance [m]
+     */
+    double get_min_stopping_distance(double v1, double a1, double v2, double a2);
 
     static string state_to_string(BehaviorState state);
 
